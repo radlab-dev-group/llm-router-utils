@@ -1,0 +1,58 @@
+{
+  "speakleash_models": {
+    "speakleash/Bielik-11B-v2.3-Instruct": {
+      "providers": [
+        {
+          "id": "bielik-11B_v2_3-vllm-local_71:7000",
+          "api_host": "http://192.168.100.71:7000/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0
+        },
+        {
+          "id": "bielik-11B_v2_3-vllm-local_71:7001",
+          "api_host": "http://192.168.100.71:7001/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0
+        },
+        {
+          "id": "bielik-11B_v2_3-vllm-local_70:7000",
+          "api_host": "http://192.168.100.70:7000/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0
+        },
+        {
+          "id": "bielik-11B_v2_3-vllm-local_71:7000",
+          "api_host": "http://192.168.100.71:7000/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0
+        },
+        {
+          "id": "bielik-11B_v2_3-vllm-local_72:7000",
+          "api_host": "http://192.168.100.72:7000/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0
+        }
+      ]
+    }
+  },
+  "active_models": {
+    "speakleash_models": [
+      "speakleash/Bielik-11B-v2.3-Instruct"
+    ]
+  }
+}
