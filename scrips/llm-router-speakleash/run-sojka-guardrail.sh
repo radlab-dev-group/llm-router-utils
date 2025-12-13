@@ -4,7 +4,7 @@
 : "${LLM_ROUTER_SOJKA_GUARD_FLASK_HOST:=0.0.0.0}"
 : "${LLM_ROUTER_SOJKA_GUARD_FLASK_PORT:=5001}"
 : "${LLM_ROUTER_SOJKA_GUARD_MODEL_PATH:=speakleash/Bielik-Guard-0.1B-v1.0}"
-: "${LLM_ROUTER_SOJKA_GUARD_DEVICE:=1}"
+: "${LLM_ROUTER_SOJKA_GUARD_DEVICE:=0}"
 
 # Export them so the Python process can read them
 export LLM_ROUTER_SOJKA_GUARD_FLASK_HOST
@@ -24,7 +24,7 @@ echo
 # Run Gunicorn
 #   -w 2               → 2 worker processes
 #   -b host:port       → bind address
-#   guardrails.speakleash.sojka_guard_app
+#   llm-router-speakleash.speakleash.sojka_guard_app
 # ---------------------------------------------------------------
 gunicorn -w 2 -b \
   "${LLM_ROUTER_SOJKA_GUARD_FLASK_HOST}:${LLM_ROUTER_SOJKA_GUARD_FLASK_PORT}" \
