@@ -59,8 +59,8 @@ Aby `run_sojka_guardrail.sh` działało, trzeba zainstalować bibliotekę `llm-r
 pip install git+https://github.com/radlab-dev-group/llm-router-services.git
 ```
 
-Dowiązujemy pobrany model `speakleash/Bielik-Guard-0.1B-v1.0` do lokalizacji, gdzie uruchamiamy model 
--- tam gdzie leży skrypt uruchamiający `run-sojka-guardrail.sh`. Jeżeli model jest ściągnięty 
+Dowiązujemy pobrany model `speakleash/Bielik-Guard-0.1B-v1.0` do lokalizacji, gdzie uruchamiamy model
+-- tam gdzie leży skrypt uruchamiający `run-sojka-guardrail.sh`. Jeżeli model jest ściągnięty
 i znajduje się pod inną ścieżką, wystarczy utworzyć dowiązanie symboliczne:
 
 ```bash
@@ -87,7 +87,9 @@ drwxrwxr-x 6 pkedzia pkedzia      4096 gru 13 12:37 ..
 
 **UWAGA** `run-sojka-guardrail.sh` uruchamia dwa workery gunicorna z modelem ładowanym na `cuda:0`.
 
-### Konfiguracja llm-router
+---
+
+## Konfiguracja LLM Router
 
 W plilku [speakleash-models.json](configs/speakleash-models.json) znajduje się konfiguracja, w której
 Bielik uruchomiony jest na 8 dostawcach w sieci lokalnmej (w tym przypadku vLLM, 1GPU == 1 dostawca).
@@ -124,16 +126,21 @@ na dostawcy `vllm` z ustawionym `max_tokens=56000`. Całość znajduje się w se
 są namiary na wszystkich dostawców modelu. `llm-router` podczas działania balansuje obciążenie na tych właśnie
 dostawców.
 
+Unikalny identyfikator providera, np. `bielik-11B_v2_3-vllm-local_70:7002` to klucz, którym posługują się strategie
+korzystające z Redisa. W llm-routerze założenie jest proste, jeden model może być dostępny u wielu dostawców,
+dlagego równoważenie/balansowanie odbywa się w kontekście konkretnego modelu, a nie wszystkich modeli w konfiguracji.
+Każdy model z konfiguracji traktowany jest jako osobny _byt_ do równoważenia obciążenia.
+
 W przykładach model Bielika uruchomiony jest na 8 hostach:
- - http://192.168.100.71:7000/ (vLLM na porcie 7000)
- - http://192.168.100.71:7001/ (vLLM na porcie 7001)
- - http://192.168.100.70:7000/ (vLLM na porcie 7000)
- - http://192.168.100.70:7001/ (vLLM na porcie 7001)
- - http://192.168.100.70:7002/ (vLLM na porcie 7002)
- - http://192.168.100.66:7000/ (vLLM na porcie 7000)
- - http://192.168.100.66:7001/ (vLLM na porcie 7001)
- - http://192.168.100.66:7002/ (vLLM na porcie 7002)
+
+- http://192.168.100.71:7000/ (vLLM na porcie 7000)
+- http://192.168.100.71:7001/ (vLLM na porcie 7001)
+- http://192.168.100.70:7000/ (vLLM na porcie 7000)
+- http://192.168.100.70:7001/ (vLLM na porcie 7001)
+- http://192.168.100.70:7002/ (vLLM na porcie 7002)
+- http://192.168.100.66:7000/ (vLLM na porcie 7000)
+- http://192.168.100.66:7001/ (vLLM na porcie 7001)
+- http://192.168.100.66:7002/ (vLLM na porcie 7002)
 
 
-### Uruchamianie Bielik-Guard
 
