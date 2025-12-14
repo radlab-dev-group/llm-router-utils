@@ -106,7 +106,7 @@ Przykładowy wpis z konfiguracji:
           "api_host": "http://192.168.100.71:7000/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0,
           "keep_alive": ""
@@ -121,7 +121,7 @@ Przykładowy wpis z konfiguracji:
 ```
 
 Czyli na hoście `http://192.168.100.71` na porcie `7000` uruchomiony jest model `speakleash/Bielik-11B-v2.3-Instruct`
-na dostawcy `vllm` z ustawionym `max_tokens=56000`. Całość znajduje się w sekcji `providers`, w której podawane
+na dostawcy `vllm` z ustawionym `max_tokens=32768`. Całość znajduje się w sekcji `providers`, w której podawane
 są namiary na wszystkich dostawców modelu. `llm-router` podczas działania balansuje obciążenie na tych właśnie
 dostawców.
 
@@ -161,6 +161,8 @@ W pliku [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) znajduje się komple
   `LLM_ROUTER_GUARDRAIL_WITH_AUDIT_REQUEST=1` do zaszyfrowanych logów, w pipelinie guardrails wykorzystany
   jest plugin do połączenia z modelem Sójki `sojka_guard`, to jednoelementowy pipeline ustawiany za pomocą
   zmiennej `LLM_ROUTER_GUARDRAIL_STRATEGY_PIPELINE_REQUEST`
+- Sójka dostępna jest na hoście definiowanym poprzez zmienna `LLM_ROUTER_GUARDRAIL_SOJKA_GUARD_HOST_EP`
+  w przykładzie jest to `http://192.168.100.71:5001` czyli lokalny host
 
 **UWAGA!** Redis jest wymagany do poprawnego działania strategii `first_available`! Jezeli nie posiadasz
 Redisa i chciałbyś przetestować rozwiązanie, wystarczy zmienić strategię np. na `balanced`, która równomiernie

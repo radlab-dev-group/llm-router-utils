@@ -8,6 +8,9 @@ vllm serve \
 	"${MODEL_PATH}" \
         --port 7002 \
         --host 0.0.0.0 \
+        --host 0.0.0.0 \
         --quantization bitsandbytes \
         --load-format bitsandbytes \
-        --gpu-memory-utilization=0.80
+        --max-model-len=32768 \
+        --max_num_seqs=8 \
+        --gpu-memory-utilization=0.90

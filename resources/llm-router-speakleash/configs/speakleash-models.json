@@ -7,7 +7,7 @@
           "api_host": "http://192.168.100.71:7000/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -16,7 +16,7 @@
           "api_host": "http://192.168.100.71:7001/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -25,7 +25,7 @@
           "api_host": "http://192.168.100.70:7000/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -34,7 +34,7 @@
           "api_host": "http://192.168.100.70:7001/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -43,7 +43,7 @@
           "api_host": "http://192.168.100.70:7002/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -52,7 +52,7 @@
           "api_host": "http://192.168.100.66:7000/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -61,7 +61,7 @@
           "api_host": "http://192.168.100.66:7001/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         },
@@ -70,7 +70,7 @@
           "api_host": "http://192.168.100.66:7002/",
           "api_token": "",
           "api_type": "vllm",
-          "input_size": 56000,
+          "input_size": 32768,
           "model_path": "",
           "weight": 1.0
         }

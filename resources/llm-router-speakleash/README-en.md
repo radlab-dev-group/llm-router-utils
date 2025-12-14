@@ -156,6 +156,8 @@ In the file [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) you’ll find th
   `LLM_ROUTER_GUARDRAIL_WITH_AUDIT_REQUEST=1`) written to encrypted logs. In the guardrail pipeline, the **sojka_guard**
   plugin (a connector to the Sójka model) is used; this is a single‑element pipeline set via the variable
   `LLM_ROUTER_GUARDRAIL_STRATEGY_PIPELINE_REQUEST`.
+- The Sójka model is available on the host defined by the `LLM_ROUTER_GUARDRAIL_SOJKA_GUARD_HOST_EP` variable. 
+  In the example, it is set to http://192.168.100.71:5001, which corresponds to a local host.
 
 **NOTE!** Redis is required for the `first_available` strategy to work correctly! If you don’t have Redis and still want
 to test the solution, simply switch the strategy, e.g., to `balanced`, which distributes the load evenly across
