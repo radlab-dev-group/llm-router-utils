@@ -1,3 +1,8 @@
+# Konfiiguracja modeli speakleash z rodziny Bielik
+
+## Bielik-Guard-0.1B-v1.0
+
+
 Aby run_sojka_guardrail.sh działało, trzeba zainstalować bibliotekę `llm-router-services`:
 
 ```bash
