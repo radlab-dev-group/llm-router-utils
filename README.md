@@ -42,12 +42,15 @@ cd llm-router-utils
 # 2️⃣ Install the package (editable mode is handy during development)
 pip install -e .
 
-# 3️⃣ Dependencies that will be pulled automatically
+# 3️⃣ Install the full set of dependencies (including llm-router and llm-router‑services)
+pip install ."[llm-router]"
+
+# Dependencies that will be pulled automatically:
 #    - llm-router @ git+https://github.com/radlab-dev-group/llm-router
 #    - llm-router-services @ git+https://github.com/radlab-dev-group/llm-router-services
 ```
 
-These dependencies are fetched directly from the specified Git repositories during the `pip install` step.
+These dependencies are fetched directly from the specified Git repositories during the `pip install .[llm-router]` step.
 
 ---
 
