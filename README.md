@@ -18,13 +18,13 @@ language‑model router. The repository contains:
 
 ## What’s in the repository?
 
-| Directory / File                   | Description                                                                                                       |
-|------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `resources/llm-router-speakleash/` | Example configuration and launch scripts for Speakleash models (e.g., Bielik‑11B‑v2.3‑Instruct and Bielik‑Guard). |
-| `run‑*.sh`                         | Bash start‑up scripts (VLLM, REST‑API, Guardrail). Just make them executable (`chmod +x`) and run them.           |
-| `llm_router_utils/`                | Python package with helper functions (currently empty, ready for extension).                                      |
-| `README.md` (this file)            | Guide to the repository.                                                                                          |
-| `requirements.txt` (optional)      | List of dependencies, if you decide to add your own libraries.                                                    |
+| Directory / File                                                    | Description                                                                                                       |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| [resources/llm-router-speakleash/](resources/llm-router-speakleash) | Example configuration and launch scripts for Speakleash models (e.g., Bielik‑11B‑v2.3‑Instruct and Bielik‑Guard). |
+| `run‑*.sh`                                                          | Bash start‑up scripts (VLLM, REST‑API, Guardrail). Just make them executable (`chmod +x`) and run them.           |
+| `llm_router_utils/`                                                 | Python package with helper functions (currently empty, ready for extension).                                      |
+| `README.md` (this file)                                             | Guide to the repository.                                                                                          |
+| `requirements.txt` (optional)                                       | List of dependencies, if you decide to add your own libraries.                                                    |
 
 ## Summary
 
