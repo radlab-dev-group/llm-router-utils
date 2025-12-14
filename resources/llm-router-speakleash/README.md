@@ -143,4 +143,40 @@ W przykładach model Bielika uruchomiony jest na 8 hostach:
 
 ---
 
+## Uruchomienie LLM Routera
+
+W pliku [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) znajduje się kompletna konfiguracja routera:
+
+- konfiguracja modeli znajduje się w pliku `LLM_ROUTER_MODELS_CONFIG` (`resources/configs/models-config.json`)
+  względem uruchomionego api LLM Routera z predefiniowanymi promptami w `resources/prompts`
+  (`LLM_ROUTER_PROMPTS_DIR`) -- ścieżka również względem uruchomionego LLM Routera
+- usługa dostępna jest na porcie `8080` (`LLM_ROUTER_SERVER_PORT`)
+- odpalana za pomocą gunicorna (`LLM_ROUTER_SERVER_TYPE`) na 4 (`LLM_ROUTER_SERVER_WORKERS_COUNT`)
+  workerach z 16 (`LLM_ROUTER_SERVER_THREADS_COUNT`) wątkami
+- ze strategią `first_available` (`LLM_ROUTER_BALANCE_STRATEGY`) z połaczeniem do Redisa na hoście
+  `192.168.100.67` (`LLM_ROUTER_REDIS_HOST`) i porcie `6379` (`LLM_ROUTER_REDIS_PORT`)
+- z włączonym wymuszonym maskowaniem `LLM_ROUTER_FORCE_MASKING=1` i audytowaniem maskowania
+  `LLM_ROUTER_MASKING_WITH_AUDIT=1` z wykorzystaniem jednoelementowego pipelinu: `[fast_masker]`
+- z włączoną obsługą typu Guardrail `LLM_ROUTER_FORCE_GUARDRAIL_REQUEST=1` audytowaniem tych incydentów
+  `LLM_ROUTER_GUARDRAIL_WITH_AUDIT_REQUEST=1` do zaszyfrowanych logów, w pipelinie guardrails wykorzystany
+  jest plugin do połączenia z modelem Sójki `sojka_guard`, to jednoelementowy pipeline ustawiany za pomocą
+  zmiennej `LLM_ROUTER_GUARDRAIL_STRATEGY_PIPELINE_REQUEST`
+
+**UWAGA!** Redis jest wymagany do poprawnego działania strategii `first_available`! Jezeli nie posiadasz
+Redisa i chciałbyś przetestować rozwiązanie, wystarczy zmienić strategię np. na `balanced`, która równomiernie
+obiąża providerów. Wtedy w skrypcie uruchomioniowym [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh)
+wystarczy zmienić linię
+
+```bash
+export LLM_ROUTER_MASKING_STRATEGY_PIPELINE=${LLM_ROUTER_MASKING_STRATEGY_PIPELINE:-"fast_masker"}
+```
+
+na
+
+```bash
+export LLM_ROUTER_MASKING_STRATEGY_PIPELINE=${LLM_ROUTER_MASKING_STRATEGY_PIPELINE:-"balanced"}
+```
+
+---
+
 **Udanego generowania i ochrony treści!** Niech Twoje treści nie wypływają z Twojej organizacji!
