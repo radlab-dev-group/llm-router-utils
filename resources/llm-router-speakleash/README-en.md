@@ -81,7 +81,8 @@ drwxrwxr-x 6 pkedzia pkedzia      4096 gru 13 12:37 ..
 -rw-rw-r-- 1 pkedzia pkedzia   2953979 lis 24 12:53 unigram.json
 ```
 
-**NOTE** `run-sojka-guardrail.sh` starts two Gunicorn workers with the model loaded on `cuda:0`.
+**NOTE** `run-sojka-guardrail.sh` launches eight Gunicorn workers with the model loaded on `cuda:0`.
+This means that the model is loaded eight times per GPU; the minimum GPU memory required is 6 GB.
 
 ---
 
@@ -156,7 +157,7 @@ In the file [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) you’ll find th
   `LLM_ROUTER_GUARDRAIL_WITH_AUDIT_REQUEST=1`) written to encrypted logs. In the guardrail pipeline, the **sojka_guard**
   plugin (a connector to the Sójka model) is used; this is a single‑element pipeline set via the variable
   `LLM_ROUTER_GUARDRAIL_STRATEGY_PIPELINE_REQUEST`.
-- The Sójka model is available on the host defined by the `LLM_ROUTER_GUARDRAIL_SOJKA_GUARD_HOST_EP` variable. 
+- The Sójka model is available on the host defined by the `LLM_ROUTER_GUARDRAIL_SOJKA_GUARD_HOST_EP` variable.
   In the example, it is set to http://192.168.100.71:5001, which corresponds to a local host.
 
 **NOTE!** Redis is required for the `first_available` strategy to work correctly! If you don’t have Redis and still want
