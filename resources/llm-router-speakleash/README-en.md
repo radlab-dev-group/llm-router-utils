@@ -138,4 +138,40 @@ In the examples, the Bielik model is launched on 8 hosts:
 
 ---
 
+## Running the LLM Router
+
+In the file [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) you’ll find the full router configuration:
+
+- The model configuration is stored in `LLM_ROUTER_MODELS_CONFIG` (`resources/configs/models-config.json`) relative to
+  the running LLM Router API, with predefined prompts in `resources/prompts` (`LLM_ROUTER_PROMPTS_DIR`) – the path is
+  also relative to the running LLM Router.
+- The service is available on port `8080` (`LLM_ROUTER_SERVER_PORT`).
+- It is started with **gunicorn** (`LLM_ROUTER_SERVER_TYPE`) using **4** workers (`LLM_ROUTER_SERVER_WORKERS_COUNT`),
+  each with **16** threads (`LLM_ROUTER_SERVER_THREADS_COUNT`).
+- It uses the `first_available` balancing strategy (`LLM_ROUTER_BALANCE_STRATEGY`) and connects to Redis at host
+  `192.168.100.67` (`LLM_ROUTER_REDIS_HOST`) on port `6379` (`LLM_ROUTER_REDIS_PORT`).
+- Forced masking is enabled (`LLM_ROUTER_FORCE_MASKING=1`) together with masking audit (
+  `LLM_ROUTER_MASKING_WITH_AUDIT=1`) using a single‑element pipeline: `[fast_masker]`.
+- Guardrail support is turned on (`LLM_ROUTER_FORCE_GUARDRAIL_REQUEST=1`) with audit of those incidents (
+  `LLM_ROUTER_GUARDRAIL_WITH_AUDIT_REQUEST=1`) written to encrypted logs. In the guardrail pipeline, the **sojka_guard**
+  plugin (a connector to the Sójka model) is used; this is a single‑element pipeline set via the variable
+  `LLM_ROUTER_GUARDRAIL_STRATEGY_PIPELINE_REQUEST`.
+
+**NOTE!** Redis is required for the `first_available` strategy to work correctly! If you don’t have Redis and still want
+to test the solution, simply switch the strategy, e.g., to `balanced`, which distributes the load evenly across
+providers. In that case, in the startup script [run-rest-api-gunicorn](./run-rest-api-gunicorn.sh) you only need to
+change the line:
+
+```bash
+export LLM_ROUTER_MASKING_STRATEGY_PIPELINE=${LLM_ROUTER_MASKING_STRATEGY_PIPELINE:-"fast_masker"}
+```
+
+to
+
+```bash
+export LLM_ROUTER_MASKING_STRATEGY_PIPELINE=${LLM_ROUTER_MASKING_STRATEGY_PIPELINE:-"balanced"}
+```
+
+---
+
 **Happy content generation and protection!** May your content stay securely within your organization!
