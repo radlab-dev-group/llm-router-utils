@@ -60,4 +60,37 @@ Skrypty można uruchamiać na dowolnej liczbie maszyn, które następnie trzeba 
 
 ### Konfiguracja llm-router
 
+W plilku [speakleash-models.json](configs/speakleash-models.json) znajduje się konfiguracja, w której
+Bielik uruchomiony jest na 8 dostawcach w sieci lokalnmej (w tym przypadku vLLM, 1GPU == 1 dostawca).
 
+Przykładowy wpis z konfiguracji:
+
+```json
+{
+  "speakleash_models": {
+    "speakleash/Bielik-11B-v2.3-Instruct": {
+      "providers": [
+        {
+          "id": "bielik-11B_v2_3-vllm-local_71:7000",
+          "api_host": "http://192.168.100.71:7000/",
+          "api_token": "",
+          "api_type": "vllm",
+          "input_size": 56000,
+          "model_path": "",
+          "weight": 1.0,
+          "keep_alive": ""
+        },
+        ...
+      ]
+    },
+    ...
+  },
+  ...
+}
+
+```
+
+Czyli na hoście `http://192.168.100.71` na porcie `7000` uruchomiony jest model `speakleash/Bielik-11B-v2.3-Instruct`
+na dostawcy `vllm` z ustawionym `max_tokens=56000`. Całość znajduje się w sekcji `providers`, w której podawane
+są namiary na wszystkich dostawców modelu. `llm-router` podczas działania balansuje obciążenie na tych właśnie
+dostawców.
