@@ -9,12 +9,16 @@ language‑model router. The repository contains:
 * **Universal tools** – useful in many areas (data analysis, text processing, content protection, etc.).
 * **Minimal setup** – everything you need is in the repository; after cloning, just run a few commands.
 
+---
+
 ## Why use it?
 
 * **Fast start** – you don’t have to build infrastructure from scratch; all components are already prepared.
 * **Modularity** – you can pick only the parts you need and easily combine them.
 * **Extensibility** – thanks to LLM‑Router you can plug in any model (local, cloud‑based, custom service) and take
   advantage of built‑in load‑balancing strategies.
+
+---
 
 ## What’s in the repository?
 
@@ -25,6 +29,27 @@ language‑model router. The repository contains:
 | `llm_router_utils/`                                                 | Python package with helper functions (currently empty, ready for extension).                                      |
 | `README.md` (this file)                                             | Guide to the repository.                                                                                          |
 | `requirements.txt` (optional)                                       | List of dependencies, if you decide to add your own libraries.                                                    |
+
+---
+
+## Installation
+
+```bash
+# 1️⃣ Clone the repository
+git clone https://github.com/radlab-dev-group/llm-router-utils.git
+cd llm-router-utils
+
+# 2️⃣ Install the package (editable mode is handy during development)
+pip install -e .
+
+# 3️⃣ Dependencies that will be pulled automatically
+#    - llm-router @ git+https://github.com/radlab-dev-group/llm-router
+#    - llm-router-services @ git+https://github.com/radlab-dev-group/llm-router-services
+```
+
+These dependencies are fetched directly from the specified Git repositories during the `pip install` step.
+
+---
 
 ## Summary
 
