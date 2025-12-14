@@ -7,5 +7,6 @@ python3 llm_router_utils/cli/translate_texts.py \
   --dataset-type jsonl \
   --dataset-path="/mnt/data2/data/datasets/huggingface/marmikpandya/mental-health/data.jsonl" \
   --accept-field input \
-  --accept-field output
-
+  --accept-field output \
+  --num-workers=8 \
+  --batch-size=10 \
