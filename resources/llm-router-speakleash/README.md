@@ -18,17 +18,17 @@ Pełen opis instalacji Bielika na lokalnym vLLM znajduje się pod adresem
 
 Ten katalog zawiera pełną konfigurację dla modeli Speakleash, zarówno Bielika jak i Bielika-Guard.
 Oba modele można podłączyć do `llm-routera` i stworzyć kompletne środowiśko uruchomieniowe,
-w którym jeden z modeli `Bielik-Guard` pilnuje treści, zaś `Bielik` służy do generowania treści.
+w którym jeden z modeli `Bielik-Guard` pilnuje treści, zaś `Bielik-Instruct` służy do generowania treści.
 
 ---
 
 ### Skrypty VLLM - fizyczne uruchomienie Bielika
 
-**UWAGA!** W przykłądzie wykorzystany jest model `Bielik-11B-v2.3-Instruct`, który nie wymaga akceptacji
+**UWAGA!** W przykłądzie wykorzystany jest model `Bielik-11B-v2.3-Instruct`, który **nie wymaga** akceptacji
 licencji podczas pobierania. Nowsze modele Speakleash wymagają zaakceptowania regulaminu
 oraz pobrania modelu z wygenerowanym tokenem na [huggingface](https://huggingface.co/).
 
-W tym katalogu znajdują się skrypty uruchomioniowe do VLLM, które ładują na karty: `0, 1, 2`
+W tym katalogu znajdują się skrypty uruchomioniowe do VLLM, które ładują na GPU: `0, 1, 2`
 model
 
 - [run-bielik-11b-v2_3-vllm_0.sh](run-bielik-11b-v2_3-vllm_0.sh) --
@@ -92,7 +92,7 @@ drwxrwxr-x 6 pkedzia pkedzia      4096 gru 13 12:37 ..
 ## Konfiguracja LLM Router
 
 W plilku [speakleash-models.json](configs/speakleash-models.json) znajduje się konfiguracja, w której
-Bielik uruchomiony jest na 8 dostawcach w sieci lokalnmej (w tym przypadku vLLM, 1GPU == 1 dostawca).
+Bielik uruchomiony jest na **8 dostawcach** w sieci lokalnmej (w tym przypadku vLLM, 1GPU == 1 dostawca).
 
 Przykładowy wpis z konfiguracji:
 
@@ -118,7 +118,6 @@ Przykładowy wpis z konfiguracji:
   },
   ...
 }
-
 ```
 
 Czyli na hoście `http://192.168.100.71` na porcie `7000` uruchomiony jest model `speakleash/Bielik-11B-v2.3-Instruct`
@@ -142,5 +141,6 @@ W przykładach model Bielika uruchomiony jest na 8 hostach:
 - http://192.168.100.66:7001/ (vLLM na porcie 7001)
 - http://192.168.100.66:7002/ (vLLM na porcie 7002)
 
+---
 
-
+**Udanego generowania i ochrony treści!** Niech Twoje treści nie wypływają z Twojej organizacji!
