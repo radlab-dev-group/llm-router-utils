@@ -1,4 +1,4 @@
-**# Speakleash Model Ecosystem in LLM Router**
+# Speakleash Model Ecosystem in LLM Router
 
 This document describes the configuration of models from the [Speakleash](https://huggingface.co/speakleash)
 family in [LLM Router](https://llm-router.cloud/). Connecting the model
