@@ -12,17 +12,17 @@ long_description = (BASE_DIR / "README.md").read_text(encoding="utf-8")
 # ------------------------------------------------------------------
 # Runtime dependencies (empty by default – you can list them here)
 # ------------------------------------------------------------------
-install_requires = (
-    [
-        "llm-router @ git+https://github.com/radlab-dev-group/llm-router",
-        "llm-router-services @ git+https://github.com/radlab-dev-group/llm-router-services",
-    ],
-)
+install_requires = []
 
 # ------------------------------------------------------------------
 # Extras (optional groups of dependencies)
 # ------------------------------------------------------------------
-extras_require = {}
+extras_require = {
+    "llm-router": [
+        "llm-router @ git+https://github.com/radlab-dev-group/llm-router",
+        "llm-router-services @ git+https://github.com/radlab-dev-group/llm-router-services",
+    ],
+}
 
 # ------------------------------------------------------------------
 # Setup configuration
@@ -42,6 +42,9 @@ setup(
     python_requires=">=3.10",
     install_requires=install_requires,
     extras_require=extras_require,
-    # If you add console scripts later, put them here:
-    # entry_points={"console_scripts": {"my-tool=llm_router_utils.module:main"}},
+    entry_points={
+        "console_scripts": {
+            "translate-texts=llm_router_utils.cli.translate_texts:main"
+        }
+    },
 )

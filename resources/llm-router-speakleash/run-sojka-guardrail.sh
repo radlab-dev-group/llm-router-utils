@@ -26,6 +26,6 @@ echo
 #   -b host:port       → bind address
 #   llm-router-speakleash.speakleash.sojka_guard_app
 # ---------------------------------------------------------------
-gunicorn -w 2 -b \
+gunicorn -w 5 -b \
   "${LLM_ROUTER_SOJKA_GUARD_FLASK_HOST}:${LLM_ROUTER_SOJKA_GUARD_FLASK_PORT}" \
   llm_router_services.guardrails.speakleash.sojka_guard_app:app
