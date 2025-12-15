@@ -81,8 +81,8 @@ drwxrwxr-x 6 pkedzia pkedzia      4096 gru 13 12:37 ..
 -rw-rw-r-- 1 pkedzia pkedzia   2953979 lis 24 12:53 unigram.json
 ```
 
-**NOTE** `run-sojka-guardrail.sh` launches eight Gunicorn workers with the model loaded on `cuda:0`.
-This means that the model is loaded eight times per GPU; the minimum GPU memory required is 6 GB.
+**NOTE** `run-sojka-guardrail.sh` launches five Gunicorn workers with the model loaded on `cuda:0`.
+This means that the model is loaded five times per GPU; the minimum GPU memory required is 6 GB.
 
 ---
 

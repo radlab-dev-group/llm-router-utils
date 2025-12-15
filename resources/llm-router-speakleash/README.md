@@ -85,8 +85,8 @@ drwxrwxr-x 6 pkedzia pkedzia      4096 gru 13 12:37 ..
 -rw-rw-r-- 1 pkedzia pkedzia   2953979 lis 24 12:53 unigram.json
 ```
 
-**UWAGA** `run-sojka-guardrail.sh` uruchamia osiem workerów gunicorna z modelem ładowanym na `cuda:0`.
-To znaczy, że na kartę ładowanych jest osiem razy model, minimalny GPU to 6GB.
+**UWAGA** `run-sojka-guardrail.sh` uruchamia pięć workerów gunicorna z modelem ładowanym na `cuda:0`.
+To znaczy, że na kartę ładowanych jest pięć razy model, minimalny GPU to 6GB.
 
 ---
 
