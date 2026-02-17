@@ -1,40 +1,35 @@
-#!/usr/bin/env python
-# genai_classifier/cli/genai_classifier_cli.py
-"""Console‑script entry point for the GenAI‑classifier.
-
-The CLI mirrors the arguments that were previously defined in
-``Config.from_cli()``.  All heavy lifting lives in the core ``classifier`` module,
-so this file stays tiny and testable.
 """
+Command-line interface for the GenAI classifier application.
 
-from __future__ import annotations
+This module provides the CLI entry point for classifying translated datasets
+using an LLM Router service.
+"""
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from llm_router_utils.core.apps.genai_classifier import GenAIClassifierApp
 
 
-def _build_parser() -> argparse.ArgumentParser:
-    """
-    Build the ``argparse`` parser that matches the original ``Config`` CLI.
-    The help strings are kept short – run ``--help`` for the full list.
-    """
+# ----------------------------------------------------------------------
+# Argument parsing
+# ----------------------------------------------------------------------
+def prepare_parser(description: str = "") -> argparse.ArgumentParser:
+    """Build the ``argparse`` parser for the command-line interface."""
     parser = argparse.ArgumentParser(
-        description="Classify HuggingFace datasets using an LLMRouter service."
+        description=description or "Classify translated datasets using LLMRouter."
     )
-
     parser.add_argument(
         "--dataset-dir",
         type=Path,
-        default=Path("./downloaded_translated_to_pl"),
+        required=True,
         help="Directory containing downloaded HF datasets.",
     )
     parser.add_argument(
         "--prompts-dir",
         type=Path,
-        default=Path("./resources/prompts"),
+        required=True,
         help="Directory with prompt files.",
     )
     parser.add_argument(
@@ -62,7 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Process data but do **not** write output files.",
+        help="Process data but do not write output files.",
     )
     parser.add_argument(
         "--output-dir",
@@ -72,7 +67,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Enable DEBUG‑level logging.",
+        help="Enable DEBUG level logging.",
     )
     parser.add_argument(
         "--num-workers",
@@ -85,28 +80,38 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=50,
         help=(
-            "Number of random samples per field (default: 50). "
+            "Number of random samples per field (default: all). "
             "If omitted, zero or negative, all examples are processed."
         ),
     )
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> None:
-    """
-    Parse CLI arguments, instantiate the core app and run it.
+# ----------------------------------------------------------------------
+# Entry point
+# ----------------------------------------------------------------------
+def main(argv: List[str] | None = None) -> None:
+    """Parse arguments, build the app and run it."""
+    args = prepare_parser().parse_args(argv)
 
-    ``argv`` is injected only for unit‑testing; when ``None`` the arguments
-    from ``sys.argv`` are used automatically by ``argparse``.
-    """
-    parser = _build_parser()
-    args = parser.parse_args(argv)
+    # Convert n_sample to None if it's zero or negative (meaning "process all")
+    n_sample = args.n_sample if args.n_sample and args.n_sample > 0 else None
 
-    # The core class does the heavy lifting.
-    app = GenAIClassifierApp(args)
+    app = GenAIClassifierApp(
+        dataset_dir=args.dataset_dir,
+        prompts_dir=args.prompts_dir,
+        llm_router_url=args.llm_router_url,
+        model_name=args.model_name,
+        temperature=args.temperature,
+        batch_save_size=args.batch_save_size,
+        dry_run=args.dry_run,
+        output_dir=args.output_dir,
+        verbose=args.verbose,
+        num_workers=args.num_workers,
+        n_sample=n_sample,
+    )
     app.run()
 
 
 if __name__ == "__main__":
-    # ``sys.argv[1:]`` is passed implicitly by ``argparse`` when ``argv=None``.
     main()
