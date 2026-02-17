@@ -20,6 +20,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from llm_router_lib.client import LLMRouterClient
 from llm_router_utils.core.hf_dataset_handler import HfDatasetHandler
+from llm_router_utils.core.jsonl_to_xlsx import convert_jsonl_to_xlsx
 from rdl_ml_utils.handlers.prompt_handler import PromptHandler
 
 # --------------------------------------------------------------------------- #
@@ -94,6 +95,7 @@ class GenAIClassifierApp:
         verbose: bool = False,
         num_workers: int = 2,
         n_sample: Optional[int] = 50,
+        export_xlsx: bool = True,
     ):
         self.dataset_dir = dataset_dir
         self.prompts_dir = prompts_dir
@@ -107,6 +109,7 @@ class GenAIClassifierApp:
         self.verbose = verbose
         self.num_workers = num_workers
         self.n_sample = n_sample
+        self.export_xlsx = export_xlsx
 
         # Shared structures for thread-safe buffering
         self._buffers: dict[Path, list[AggregatedRecord]] = {}
@@ -428,6 +431,31 @@ class GenAIClassifierApp:
         if self.verbose:
             log.debug("Full configuration: %s", self.__dict__)
 
+    def _convert_output_files_to_xlsx(self) -> None:
+        """Convert all generated JSONL files to XLSX format."""
+        if not self.export_xlsx or self.dry_run:
+            return
+
+        out_dir = self.output_dir or self.dataset_dir
+        if not out_dir.is_dir():
+            log.warning("Output directory does not exist: %s", out_dir)
+            return
+
+        jsonl_files = list(out_dir.glob("*.jsonl"))
+        if not jsonl_files:
+            log.info("No JSONL files found to convert to XLSX")
+            return
+
+        log.info("Converting %d JSONL file(s) to XLSX format...", len(jsonl_files))
+        
+        for jsonl_file in jsonl_files:
+            try:
+                xlsx_file = jsonl_file.with_suffix(".xlsx")
+                log.info("Converting %s to %s", jsonl_file.name, xlsx_file.name)
+                convert_jsonl_to_xlsx(jsonl_file, xlsx_file)
+            except Exception as exc:
+                log.error("Failed to convert %s to XLSX: %s", jsonl_file.name, exc)
+
     # --------------------------------------------------------------------------- #
     # Main workflow
     # --------------------------------------------------------------------------- #
@@ -485,5 +513,8 @@ class GenAIClassifierApp:
 
         for path in paths_to_flush:
             self._flush_buffer(path)
+
+        # ---- convert JSONL files to XLSX format ---------------------------
+        self._convert_output_files_to_xlsx()
 
         log.info("Processing finished.")

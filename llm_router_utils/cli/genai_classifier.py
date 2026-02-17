@@ -84,6 +84,18 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
             "If omitted, zero or negative, all examples are processed."
         ),
     )
+    parser.add_argument(
+        "--export-xlsx",
+        action="store_true",
+        help="Convert output JSONL files to XLSX format (default: True).",
+    )
+    parser.add_argument(
+        "--no-export-xlsx",
+        dest="export_xlsx",
+        action="store_false",
+        help="Disable XLSX export (only save JSONL files).",
+    )
+    parser.set_defaults(export_xlsx=True)
     return parser
 
 
@@ -109,6 +121,7 @@ def main(argv: List[str] | None = None) -> None:
         verbose=args.verbose,
         num_workers=args.num_workers,
         n_sample=n_sample,
+        export_xlsx=args.export_xlsx,
     )
     app.run()
 
