@@ -47,6 +47,8 @@ json
 ‑ Unikaj dodatkowego tekstu przed lub po JSON‑ie.
 """
 
+_ADDITIONAL_PROMPT_JSON = None
+
 
 # --------------------------------------------------------------------------- #
 # Data structures
@@ -186,6 +188,7 @@ class GenAIClassifierApp:
         prompt_handler: PromptHandler,
         text: str,
         feature_name: str,
+        retry_when_invalid_json: int = 5
     ) -> Dict[str, Any]:
         """Call the LLM for a single (text, feature) pair and return parsed JSON."""
         prompt_str = prompt_handler.get_prompt(feature_name)
@@ -202,12 +205,11 @@ class GenAIClassifierApp:
 
         parsed = None
         raw_json = None
-        retry_when_invalid_json = 5
         while retry_when_invalid_json > 0:
             response = llm_client.extended_conversation_with_model(payload=payload)
             raw_json = response.get("response", "{}")
-
             try:
+                raw_json = raw_json.replace("json\n", "")
                 parsed = json.loads(raw_json)
                 break
             except json.JSONDecodeError:
@@ -218,6 +220,10 @@ class GenAIClassifierApp:
                     retry_when_invalid_json,
                 )
                 retry_when_invalid_json -= 1
+
+                log.warning("=" * 100)
+                log.warning(response)
+                log.warning("=" * 100)
 
         if parsed and len(parsed) and self.verbose:
             parsed["_raw_response"] = raw_json
@@ -291,7 +297,8 @@ class GenAIClassifierApp:
             feature_responses: List[Dict[str, Any]] = []
             for feature_name in self.prompts_list:
                 llm_response = self._classify_text(
-                    llm_client, prompt_handler, text, feature_name
+                    llm_client, prompt_handler, text, feature_name,
+                    retry_when_invalid_json=5
                 )
                 feature_responses.append(
                     {"name": feature_name, "response": llm_response}
