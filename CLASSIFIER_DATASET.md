@@ -5,9 +5,9 @@
 1. [Introduction](#1-introduction)
 2. [Solution Architecture](#2-solution-architecture)
 3. [Local Environment Setup](#3-local-environment-setup)
-   - [vLLM](#31-vllm)
-   - [llama.cpp](#32-llamacpp)
-   - [Ollama](#33-ollama)
+    - [vLLM](#31-vllm)
+    - [llama.cpp](#32-llamacpp)
+    - [Ollama](#33-ollama)
 4. [LLM Router Configuration](#4-llm-router-configuration)
 5. [genai-classifier Utility](#5-genai-classifier-utility)
 6. [Complete End-to-End Example](#6-complete-end-to-end-example)
@@ -21,10 +21,12 @@
 This document describes the full process of generating datasets for NLP model training using:
 
 - **LLM Router** — an API gateway that load-balances across multiple LLM backends (vLLM, llama.cpp, Ollama)
-- **genai-classifier** — a utility from the `llm-router-utils` package that classifies texts using an LLM according to provided prompts
+- **genai-classifier** — a utility from the `llm-router-utils` package that classifies texts using an LLM according to
+  provided prompts
 - **translate-texts** — a utility for batch text translation
 
 **Typical use cases**:
+
 - Data augmentation (classification, attribute extraction, categorization)
 - Preparing training data for fine-tuning
 - Evaluating content for presence of specific classes (e.g., hate speech detection, topic categorization)
@@ -54,14 +56,14 @@ This document describes the full process of generating datasets for NLP model tr
 
 ### Components
 
-| Component | Role |
-|---|---|
-| **`llm_router_lib.client.LLMRouterClient`** | HTTP client — sends requests to the router, handles retries and errors |
-| **`llm_router_api.rest_api`** | REST gateway — load-balances, proxies to backends (vLLM, Ollama, llama.cpp) |
-| **`GenAIClassifierApp`** | Orchestrator — loads data, sends to LLM, aggregates results into JSONL |
-| **`PromptHandler`** (from `rdl_ml_utils`) | Loads prompts from `.prompt` files in `prompts_dir` |
-| **`HfDatasetHandler`** | Downloads and loads datasets from HuggingFace Hub |
-| **`convert_jsonl_to_xlsx`** | Converts JSONL to Excel with formatting |
+| Component                                   | Role                                                                        |
+|---------------------------------------------|-----------------------------------------------------------------------------|
+| **`llm_router_lib.client.LLMRouterClient`** | HTTP client — sends requests to the router, handles retries and errors      |
+| **`llm_router_api.rest_api`**               | REST gateway — load-balances, proxies to backends (vLLM, Ollama, llama.cpp) |
+| **`GenAIClassifierApp`**                    | Orchestrator — loads data, sends to LLM, aggregates results into JSONL      |
+| **`PromptHandler`** (from `rdl_ml_utils`)   | Loads prompts from `.prompt` files in `prompts_dir`                         |
+| **`HfDatasetHandler`**                      | Downloads and loads datasets from HuggingFace Hub                           |
+| **`convert_jsonl_to_xlsx`**                 | Converts JSONL to Excel with formatting                                     |
 
 ### Classification Pipeline
 
@@ -165,7 +167,8 @@ tmux new -s vllm './launch-vllm.sh'
 ```
 
 > **Tip:** The vLLM server listens on `http://0.0.0.0:7000/v1/chat/completions`.
-> Test: `curl http://localhost:7000/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"speakleash/Bielik-11B-v2.3-Instruct","messages":[{"role":"user","content":"Test"}],"max_tokens":10}'`
+> Test:
+`curl http://localhost:7000/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"speakleash/Bielik-11B-v2.3-Instruct","messages":[{"role":"user","content":"Test"}],"max_tokens":10}'`
 
 ---
 
@@ -414,21 +417,21 @@ pip install .[llm-router]
 genai-classifier --help
 ```
 
-| Argument | Type | Default | Description |
-|---|---|---|---|
-| `--dataset-dir` | `Path` | **(required)** | Directory with downloaded HF datasets or XLSX |
-| `--prompts-dir` | `Path` | **(required)** | Directory with `.prompt` files |
-| `--llm-router-url` | `str` | `http://192.168.100.65:8080` | LLM Router URL |
-| `--model-name` | `str` | `gpt-oss:120b` | Model identifier to send to the router |
-| `--temperature` | `float` | `0.0` | Generation temperature (0 = deterministic, 1 = creative) |
-| `--num-workers` | `int` | `2` | Number of parallel worker threads (and LLM clients) |
-| `--batch-save-size` | `int` | `5` | Number of records written to disk at once |
-| `--n-sample` | `int` | `50` | Number of random samples per field (0 = all) |
-| `--dry-run` | `flag` | `false` | Process data without writing output files |
-| `--output-dir` | `Path` | *(dataset-dir)* | Output directory |
-| `--verbose` | `flag` | `false` | DEBUG-level logging |
-| `--export-xlsx` | `flag` | `true` | Export results to Excel (default: enabled) |
-| `--no-export-xlsx` | `flag` | `false` | Disable XLSX export (save only JSONL) |
+| Argument            | Type    | Default                      | Description                                              |
+|---------------------|---------|------------------------------|----------------------------------------------------------|
+| `--dataset-dir`     | `Path`  | **(required)**               | Directory with downloaded HF datasets or XLSX            |
+| `--prompts-dir`     | `Path`  | **(required)**               | Directory with `.prompt` files                           |
+| `--llm-router-url`  | `str`   | `http://192.168.100.65:8080` | LLM Router URL                                           |
+| `--model-name`      | `str`   | `gpt-oss:120b`               | Model identifier to send to the router                   |
+| `--temperature`     | `float` | `0.0`                        | Generation temperature (0 = deterministic, 1 = creative) |
+| `--num-workers`     | `int`   | `2`                          | Number of parallel worker threads (and LLM clients)      |
+| `--batch-save-size` | `int`   | `5`                          | Number of records written to disk at once                |
+| `--n-sample`        | `int`   | `50`                         | Number of random samples per field (0 = all)             |
+| `--dry-run`         | `flag`  | `false`                      | Process data without writing output files                |
+| `--output-dir`      | `Path`  | *(dataset-dir)*              | Output directory                                         |
+| `--verbose`         | `flag`  | `false`                      | DEBUG-level logging                                      |
+| `--export-xlsx`     | `flag`  | `true`                       | Export results to Excel (default: enabled)               |
+| `--no-export-xlsx`  | `flag`  | `false`                      | Disable XLSX export (save only JSONL)                    |
 
 ### 5.3 Prepare Prompts
 
@@ -663,16 +666,17 @@ output/
 
 Each worksheet sheet corresponds to one field (`field`). Columns:
 
-| Column | Description |
-|---|---|
-| `text` | Source text (column width ≈ 55 characters) |
-| `<prompt_name>` | Class name (always present) |
-| `<prompt_name>-class` | Class (if available) |
-| `<prompt_name>-confidence` | Confidence (0.0–1.0) |
-| `<prompt_name>-exists` | Whether class is present (1/True, 0/False) |
-| `<prompt_name>-reason` | Reason for the model's decision |
+| Column                     | Description                                |
+|----------------------------|--------------------------------------------|
+| `text`                     | Source text (column width ≈ 55 characters) |
+| `<prompt_name>`            | Class name (always present)                |
+| `<prompt_name>-class`      | Class (if available)                       |
+| `<prompt_name>-confidence` | Confidence (0.0–1.0)                       |
+| `<prompt_name>-exists`     | Whether class is present (1/True, 0/False) |
+| `<prompt_name>-reason`     | Reason for the model's decision            |
 
 **Formatting**:
+
 - Headers: bold, centered, light-blue background
 - Even data rows: light-gray background (zebra striping)
 - Rows with `exists=1`: light-green background
@@ -699,7 +703,8 @@ export LLM_ROUTER_BALANCE_STRATEGY="balanced"
 
 ### Problem: `ValueError: Unknown model 'xyz'`
 
-**Solution:** Ensure `--model-name` matches a model available at the providers in your configuration. Check `models-config.json`.
+**Solution:** Ensure `--model-name` matches a model available at the providers in your configuration. Check
+`models-config.json`.
 
 ### Problem: Ollama returns `error: model not found`
 
