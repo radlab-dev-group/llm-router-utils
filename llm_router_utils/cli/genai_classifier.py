@@ -3,6 +3,15 @@ Command-line interface for the GenAI classifier application.
 
 This module provides the CLI entry point for classifying translated datasets
 using an LLM Router service.
+
+Example usage:
+    genai-classifier \
+        --dataset-dir ./data \
+        --prompts-dir ./prompts \
+        --llm-router-url http://localhost:8080 \
+        --model-name gpt-oss:120b \
+        --num-workers 2 \
+        --n-sample 50
 """
 
 import argparse

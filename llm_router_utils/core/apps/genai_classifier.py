@@ -77,8 +77,9 @@ class GenAIClassifierApp:
     """
     High-level orchestrator for GenAI classification pipeline.
 
-    This class handles the classification of translated datasets using an LLM Router service.
-    It can be used both from CLI and as a library component.
+    - Generates a main .jsonl file with all LLM responses.
+    - Generates a `*_for_augmentation.jsonl` file with simplified labels for use with the augmentator.
+    - Automatically exports to .xlsx (if not disabled).
     """
 
     def __init__(
