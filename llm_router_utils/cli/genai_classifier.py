@@ -6,8 +6,9 @@ using an LLM Router service.
 """
 
 import argparse
-from pathlib import Path
+
 from typing import List
+from pathlib import Path
 
 from llm_router_utils.core.apps.genai_classifier import GenAIClassifierApp
 
@@ -85,6 +86,11 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--text-column-name",
+        default="Tekst",
+        help="Name of the column containing the text to classify (default: 'Tekst').",
+    )
+    parser.add_argument(
         "--export-xlsx",
         action="store_true",
         help="Convert output JSONL files to XLSX format (default: True).",
@@ -122,6 +128,7 @@ def main(argv: List[str] | None = None) -> None:
         num_workers=args.num_workers,
         n_sample=n_sample,
         export_xlsx=args.export_xlsx,
+        text_column_name=args.text_column_name,
     )
     app.run()
 

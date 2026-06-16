@@ -96,6 +96,7 @@ class GenAIClassifierApp:
         num_workers: int = 2,
         n_sample: Optional[int] = 50,
         export_xlsx: bool = True,
+        text_column_name: str = "Tekst",
     ):
         self.dataset_dir = dataset_dir
         self.prompts_dir = prompts_dir
@@ -110,6 +111,7 @@ class GenAIClassifierApp:
         self.num_workers = num_workers
         self.n_sample = n_sample
         self.export_xlsx = export_xlsx
+        self.text_column_name = text_column_name
 
         # Shared structures for thread-safe buffering
         self._buffers: dict[Path, list[AggregatedRecord]] = {}
@@ -142,32 +144,50 @@ class GenAIClassifierApp:
                 log.exception("Failed to load dataset %s: %s", ds_name, exc)
         return loaded
 
-    def _load_xlsx_datasets(
+    def _load_local_datasets(
         self, df_fields: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         loaded: List[Dict[str, Any]] = []
-        # Load datasets from XLSX files if they exist in dataset_dir
+        # Load datasets from XLSX or JSONL files if they exist in dataset_dir
         xlsx_files = list(self.dataset_dir.glob("*.xlsx"))
-        if xlsx_files:
-            log.info("Found %d XLSX file(s) in dataset directory", len(xlsx_files))
+        jsonl_files = list(self.dataset_dir.glob("*.jsonl"))
 
-            for xlsx_file in xlsx_files:
+        all_files = xlsx_files + jsonl_files
+
+        if all_files:
+            log.info("Found %d local file(s) in dataset directory", len(all_files))
+
+            for data_file in all_files:
                 try:
-                    # Read the first sheet from XLSX
-                    df = pd.read_excel(xlsx_file, sheet_name=0)
+                    if data_file.suffix == ".xlsx":
+                        # Read the first sheet from XLSX
+                        df = pd.read_excel(data_file, sheet_name=0)
+                        # Convert DataFrame to a simple list of dicts for consistency
+                        dataset_records = df.to_dict("records")
+                        columns = list(df.columns)
+                    elif data_file.suffix == ".jsonl":
+                        dataset_records = []
+                        with data_file.open("r", encoding="utf-8") as f:
+                            for line in f:
+                                if line.strip():
+                                    dataset_records.append(json.loads(line))
+                        # Use keys of the first record as columns if available
+                        columns = list(dataset_records[0].keys()) if dataset_records else []
+                    else:
+                        continue
 
                     # Use all columns as fields (similar to HF dataset)
-                    fields = df_fields or list(df.columns)
+                    fields = df_fields or columns
                     ds_name = (
-                        xlsx_file.stem
+                        data_file.stem
                     )  # Use filename without extension as dataset name
 
                     log.info(
-                        "Loading XLSX dataset %s with fields: %s", ds_name, fields
+                        "Loading dataset %s (from %s) with fields: %s",
+                        ds_name,
+                        data_file.suffix,
+                        fields,
                     )
-
-                    # Convert DataFrame to a simple list of dicts for consistency
-                    dataset_records = df.to_dict("records")
 
                     loaded.append(
                         {
@@ -178,7 +198,7 @@ class GenAIClassifierApp:
                     )
 
                 except Exception as exc:
-                    log.exception("Failed to load XLSX file %s: %s", xlsx_file, exc)
+                    log.exception("Failed to load local file %s: %s", data_file, exc)
         return loaded
 
     @retry(
@@ -479,7 +499,7 @@ class GenAIClassifierApp:
         # Load all datasets
         # TODO: if dataset_list is not empty - load HF datasets
         # all_datasets = self._load_datasets(dataset_list=)
-        all_datasets = self._load_xlsx_datasets(df_fields=["Tekst"])
+        all_datasets = self._load_local_datasets(df_fields=[self.text_column_name])
 
         # ---- task queue -------------------------------------------------
         task_q: queue.Queue = queue.Queue()
