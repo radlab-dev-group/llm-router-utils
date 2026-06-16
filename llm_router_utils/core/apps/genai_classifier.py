@@ -96,7 +96,7 @@ class GenAIClassifierApp:
         num_workers: int = 2,
         n_sample: Optional[int] = 50,
         export_xlsx: bool = True,
-        text_column_name: str = "Tekst",
+        text_column_name: str = "text",
     ):
         self.dataset_dir = dataset_dir
         self.prompts_dir = prompts_dir
@@ -261,11 +261,16 @@ class GenAIClassifierApp:
         return parsed
 
     def _load_existing_texts(self, path: Path) -> Set[Tuple[str, str]]:
-        """Return a set of (field, text) tuples already present in *path*."""
+        """
+        Return a set of (field, text) tuples already present in *path*.
+        Additionally, ensures the augmentation file contains all records from the main file.
+        """
         seen: Set[Tuple[str, str]] = set()
         if not path.is_file():
             return seen
 
+        # Load records from main file
+        main_records = []
         with path.open("r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -277,8 +282,57 @@ class GenAIClassifierApp:
                     fld = obj.get("field")
                     if isinstance(txt, str) and isinstance(fld, str):
                         seen.add((fld, txt))
+                        main_records.append(obj)
                 except json.JSONDecodeError:
                     log.debug("Skipping malformed line in %s", path)
+
+        # Check augmentation file
+        aug_path = path.with_name(f"{path.stem}_clean_labels.jsonl")
+        seen_aug = set()
+        if aug_path.is_file():
+            with aug_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        # We use (original_field, Tekst) as unique key for augmentation file
+                        txt = obj.get("text")
+                        fld = obj.get("original_field")
+                        if isinstance(txt, str) and isinstance(fld, str):
+                            seen_aug.add((fld, txt))
+                    except json.JSONDecodeError:
+                        log.debug("Skipping malformed line in %s", aug_path)
+
+        # Backfill missing records in augmentation file
+        missing_records = [
+            rec for rec in main_records 
+            if (rec.get("field"), rec.get("text")) not in seen_aug
+        ]
+
+        if missing_records:
+            log.info(
+                "Converting %d missing records to augmentation format in %s",
+                len(missing_records), aug_path.name
+            )
+            with aug_path.open("a", encoding="utf-8") as f:
+                for rec in missing_records:
+                    labels = []
+                    for feat in rec.get("features", []):
+                        resp = feat.get("response", {})
+                        if "class" in resp:
+                            labels.append(resp["class"])
+                        elif resp.get("exists") is True:
+                            labels.append(feat["name"])
+
+                    aug_rec = {
+                        "text": rec.get("text"),
+                        "labels": labels,
+                        "original_field": rec.get("field"),
+                    }
+                    f.write(json.dumps(aug_rec, ensure_ascii=False) + "\n")
+
         log.info(
             "Loaded %d previously processed records from %s", len(seen), path.name
         )
@@ -295,9 +349,33 @@ class GenAIClassifierApp:
             buffer.clear()
             return
 
-        with lock, path.open("a", encoding="utf-8") as f:
-            for rec in buffer:
-                f.write(rec.to_json() + "\n")
+        with lock:
+            # Original format save
+            with path.open("a", encoding="utf-8") as f:
+                for rec in buffer:
+                    f.write(rec.to_json() + "\n")
+
+            # Augmentation format save
+            aug_path = path.with_name(f"{path.stem}_clean_labels.jsonl")
+            with aug_path.open("a", encoding="utf-8") as f:
+                for rec in buffer:
+                    # Logic for extracting labels:
+                    # Collect all classes from features where response has a 'class'
+                    # or if 'exists' is True, use the feature name
+                    labels = []
+                    for feat in rec.features:
+                        resp = feat.get("response", {})
+                        if "class" in resp:
+                            labels.append(resp["class"])
+                        elif resp.get("exists") is True:
+                            labels.append(feat["name"])
+
+                    aug_rec = {
+                        "text": rec.text,
+                        "labels": labels,
+                        "original_field": rec.field,
+                    }
+                    f.write(json.dumps(aug_rec, ensure_ascii=False) + "\n")
 
         log.debug("Flushed %d records to %s", len(buffer), path.name)
         buffer.clear()
@@ -479,7 +557,13 @@ class GenAIClassifierApp:
             try:
                 xlsx_file = jsonl_file.with_suffix(".xlsx")
                 log.info("Converting %s to %s", jsonl_file.name, xlsx_file.name)
-                convert_jsonl_to_xlsx(jsonl_file, xlsx_file)
+                # Use simple pandas conversion for augmentation files to avoid pretty formatting 
+                # that expects specific structure
+                if jsonl_file.stem.endswith("_clean_labels"):
+                    df = pd.read_json(jsonl_file, lines=True)
+                    df.to_excel(xlsx_file, index=False)
+                else:
+                    convert_jsonl_to_xlsx(jsonl_file, xlsx_file)
             except Exception as exc:
                 log.error("Failed to convert %s to XLSX: %s", jsonl_file.name, exc)
 
