@@ -49,6 +49,18 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         help="Number of random samples per class as examples to augment (use 0 for all).",
     )
     parser.add_argument(
+        "--n-examples",
+        type=int,
+        default=3,
+        help="Number of augmented examples the LLM should generate for each input text.",
+    )
+    parser.add_argument(
+        "--samples-as-examples",
+        type=int,
+        default=5,
+        help="Number of random samples per class from the dataset to include in the prompt context.",
+    )
+    parser.add_argument(
         "--llm-router-url",
         default="http://192.168.100.65:8080",
         help="Base URL of the LLMRouter service.",
@@ -130,6 +142,8 @@ def main(argv: List[str] | None = None) -> None:
         model_name=args.model_name,
         temperature=args.temperature,
         n_samples=args.n_samples,
+        n_examples=args.n_examples,
+        samples_as_examples=args.samples_as_examples,
         batch_save_size=args.batch_save_size,
         dry_run=args.dry_run,
         output_dir=args.output_dir,

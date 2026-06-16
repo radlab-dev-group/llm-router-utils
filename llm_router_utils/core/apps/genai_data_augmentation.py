@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Set, Tuple, Optional
 
 import pandas as pd
 import tqdm
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from llm_router_lib.client import LLMRouterClient
 from llm_router_utils.core.hf_dataset_handler import HfDatasetHandler
@@ -45,8 +45,8 @@ class AugmentedRecord:
     augmented_text: str
     metadata: Dict[str, Any]
 
-    def to_json(self) -> str:
-        """Serialize to a JSON string (ASCII‑safe)."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to a dictionary for serialization, parsing augmented_text if possible."""
         data = {
             "original_text": self.original_text,
             "labels": self.labels,
@@ -76,7 +76,11 @@ class AugmentedRecord:
                 data["augmented_text"] = self.augmented_text
         except (json.JSONDecodeError, TypeError):
             data["augmented_text"] = self.augmented_text
+        return data
 
+    def to_json(self) -> str:
+        """Serialize to a JSON string (ASCII‑safe)."""
+        data = self.to_dict()
         return json.dumps(data, ensure_ascii=False)
 
 
@@ -102,6 +106,8 @@ class GenAIDataAugmentationApp:
         model_name: str,
         temperature: float = 0.7,
         n_samples: int = 5,
+        n_examples: int = 3,
+        samples_as_examples: int = 5,
         batch_save_size: int = 5,
         dry_run: bool = False,
         output_dir: Optional[Path] = None,
@@ -118,6 +124,8 @@ class GenAIDataAugmentationApp:
         self.model_name = model_name
         self.temperature = temperature
         self.n_samples = n_samples
+        self.n_examples = n_examples
+        self.samples_as_examples = samples_as_examples
         self.batch_save_size = batch_save_size
         self.dry_run = dry_run
         self.output_dir = output_dir
@@ -159,8 +167,8 @@ class GenAIDataAugmentationApp:
         return df
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(30),
     )
     def _augment_text(
         self,
@@ -168,17 +176,24 @@ class GenAIDataAugmentationApp:
         prompt: str,
         text: str,
         labels: List[str],
+        all_samples_info: str = "",
     ) -> str:
         """Call the LLM to augment a single text."""
-        # We can customize how we pass the labels and text to the prompt
-        # Assuming the prompt expects the text to be augmented.
-        labels_str = ", ".join(labels)
-        user_input = f"Tekst do augmentacji (klasy: {labels_str}):\n{text}"
+        # Replace placeholders in the prompt
+        final_prompt = prompt.replace("{CLASS_LIST_PLACEHOLDER}", ", ".join(self.labels))
+        final_prompt = final_prompt.replace(
+            "{SAMPLES_PER_CLASS_PLACEHOLDER}", str(self.n_examples)
+        )
+        final_prompt = final_prompt.replace(
+            "{CLASS_EXAMPLES_PLACEHOLDER}", all_samples_info
+        )
+
+        user_input = text
 
         payload = {
             "model_name": self.model_name,
             "temperature": self.temperature,
-            "system_prompt": prompt,
+            "system_prompt": final_prompt,
             "user_last_statement": user_input,
         }
 
@@ -187,6 +202,8 @@ class GenAIDataAugmentationApp:
 
     def _flush_buffer(self, path: Path) -> None:
         """Write records from buffer to disk and clear buffer."""
+        train_path = path.with_name(f"{path.stem}-train.jsonl")
+
         with self._file_locks[path]:
             with self._buffers_lock:
                 records = self._buffers.get(path, [])
@@ -195,11 +212,36 @@ class GenAIDataAugmentationApp:
                 self._buffers[path] = []
 
             log.debug("Flushing %d records to %s", len(records), path)
-            with path.open("a", encoding="utf-8") as f:
+            with path.open("a", encoding="utf-8") as f, train_path.open(
+                "a", encoding="utf-8"
+            ) as f_train:
                 for rec in records:
                     f.write(rec.to_json() + "\n")
 
-    def _worker(self, task_queue: queue.Queue, prompt: str) -> None:
+                    # Extract augmented examples for the -train file
+                    rec_dict = rec.to_dict()
+                    examples = rec_dict.get("augmented_examples", [])
+                    if isinstance(examples, list):
+                        for ex in examples:
+                            if isinstance(ex, str):
+                                train_rec = {"text": ex, "labels": rec.labels}
+                                f_train.write(
+                                    json.dumps(train_rec, ensure_ascii=False) + "\n"
+                                )
+                            elif isinstance(ex, dict) and "text" in ex:
+                                # Fallback if LLM returns objects instead of strings
+                                # but usually we expect strings in augmented_examples
+                                train_rec = {
+                                    "text": ex["text"],
+                                    "labels": ex.get("labels", rec.labels),
+                                }
+                                f_train.write(
+                                    json.dumps(train_rec, ensure_ascii=False) + "\n"
+                                )
+
+    def _worker(
+        self, task_queue: queue.Queue, prompt: str, all_samples_info: str
+    ) -> None:
         """Worker thread for processing augmentation tasks."""
         llm_client = LLMRouterClient(self.llm_router_url)
 
@@ -212,7 +254,9 @@ class GenAIDataAugmentationApp:
             output_path, labels, text = task
 
             try:
-                augmented_text = self._augment_text(llm_client, prompt, text, labels)
+                augmented_text = self._augment_text(
+                    llm_client, prompt, text, labels, all_samples_info
+                )
 
                 record = AugmentedRecord(
                     original_text=text,
@@ -247,6 +291,7 @@ class GenAIDataAugmentationApp:
 
         out_dir = self.output_dir or self.dataset_path.parent
         jsonl_files = list(out_dir.glob("*_augmented.jsonl"))
+        jsonl_files += list(out_dir.glob("*_augmented-train.jsonl"))
 
         for jsonl_path in jsonl_files:
             xlsx_path = jsonl_path.with_suffix(".xlsx")
@@ -272,6 +317,7 @@ class GenAIDataAugmentationApp:
             self._file_locks[output_path] = threading.Lock()
 
         task_queue = queue.Queue()
+        example_samples = []
 
         for label in self.labels:
             # Filter by labels (check if label is in the list of labels)
@@ -303,12 +349,42 @@ class GenAIDataAugmentationApp:
                 log.warning("No samples found for label: %s", label)
                 continue
 
-            # Sample n_samples
+            # Sample n_samples for processing
             if self.n_samples <= 0:
                 n = len(subset)
             else:
                 n = min(len(subset), self.n_samples)
             sampled = subset.sample(n=n)
+
+            # Sample samples_as_examples for the context (json/prompt)
+            if self.samples_as_examples <= 0:
+                n_ex = len(subset)
+            else:
+                n_ex = min(len(subset), self.samples_as_examples)
+            sampled_for_context = subset.sample(n=n_ex)
+
+            for _, row in sampled_for_context.iterrows():
+                text_ex = str(row[self.text_column_name])
+                row_labels_ex = row.get(self.label_column_name, [label])
+
+                # Handle string representation of a list
+                if (
+                    isinstance(row_labels_ex, str)
+                    and row_labels_ex.strip().startswith("[")
+                    and row_labels_ex.strip().endswith("]")
+                ):
+                    try:
+                        row_labels_ex = ast.literal_eval(row_labels_ex)
+                    except (ValueError, SyntaxError):
+                        pass
+
+                if not isinstance(row_labels_ex, list):
+                    row_labels_ex = [str(row_labels_ex).strip()]
+                else:
+                    row_labels_ex = [str(L).strip() for L in row_labels_ex]
+
+                row_labels_ex = [L for L in row_labels_ex if L in self.labels]
+                example_samples.append({"text": text_ex, "labels": row_labels_ex})
 
             log.info("Enqueuing %d samples for label: %s", n, label)
             for _, row in sampled.iterrows():
@@ -332,17 +408,29 @@ class GenAIDataAugmentationApp:
                 else:
                     row_labels = [str(L).strip() for L in row_labels]
 
+                # Keep only labels that are in the filter list (self.labels)
+                row_labels = [L for L in row_labels if L in self.labels]
+
                 task_queue.put((output_path, row_labels, text))
 
         if task_queue.empty():
             log.warning("No tasks to process.")
             return
 
+        # Prepare all_samples_info for CLASS_EXAMPLES_PLACEHOLDER
+        all_samples_info = ""
+        for i, sample in enumerate(example_samples, 1):
+            all_samples_info += (
+                f"Przykład {i}:\nTekst: {sample['text']}\n"
+                f"Klasy: {', '.join(sample['labels'])}\n\n"
+            )
+
         # Start workers
         threads = []
         for _ in range(self.num_workers):
             t = threading.Thread(
-                target=self._worker, args=(task_queue, prompt_content)
+                target=self._worker,
+                args=(task_queue, prompt_content, all_samples_info),
             )
             t.start()
             threads.append(t)
