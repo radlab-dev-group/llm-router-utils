@@ -121,6 +121,8 @@ genai-data-augmentation \
     --prompt-file ./prompts/augmentation_prompt.txt \
     --labels "depresja,lęk" \
     --n-samples 5 \
+    --samples-as-examples 5 \
+    --n-examples 3 \
     --num-workers 2 \
     --llm-router-url http://localhost:8080 \
     --model-name "speakleash/Bielik-11B-v2.3-Instruct"
@@ -133,7 +135,9 @@ genai-data-augmentation \
 | `--dataset-path`      | `Path` | **(required)** | Path to the input dataset (JSONL or XLSX).      |
 | `--prompt-file`       | `Path` | **(required)** | Path to the augmentation prompt file.           |
 | `--labels`            | `str`  | **(required)** | Comma-separated list of labels to augment.      |
-| `--n-samples`         | `int`  | `10`           | Number of samples per class to use as examples. |
+| `--n-samples`         | `int`  | `5`            | Number of samples per class to use as examples. |
+| `--samples-as-examples` | `int` | `5`            | Number of samples per class to include in prompt context. |
+| `--n-examples`        | `int`  | `3`            | Number of augmented examples to generate.       |
 | `--llm-router-url`    | `str`  | `http://...`   | LLM Router URL.                                 |
 | `--model-name`        | `str`  | `gpt-oss:120b` | Model identifier.                               |
 | `--text-column-name`  | `str`  | `Tekst`        | Name of the column containing the text.         |
@@ -195,6 +199,8 @@ app = GenAIDataAugmentationApp(
     prompt_path=Path("./prompts/augmentation_prompt.txt"),
     labels=["depresja", "lęk"],
     n_samples=5,
+    samples_as_examples=5,
+    n_examples=3,
     llm_router_url="http://localhost:8080",
     model_name="speakleash/Bielik-11B-v2.3-Instruct",
 )
