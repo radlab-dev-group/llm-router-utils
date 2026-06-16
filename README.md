@@ -1,31 +1,35 @@
 # llm-router-utils
 
-**v0.0.3** — Utility package for [LLM Router](https://github.com/radlab-dev-group/llm-router) – ready-made tools and examples for text translation, dataset classification, and HuggingFace dataset management.
+**v0.0.3** — Utility package for [LLM Router](https://github.com/radlab-dev-group/llm-router) – ready-made tools and
+examples for text translation, dataset classification, and HuggingFace dataset management.
 
 ## What is it?
 
-`llm-router-utils` is a collection of **CLI tools** and **reusable helpers** built on top of **LLM Router** – a flexible language-model router that load-balances across multiple backends (vLLM, llama.cpp, Ollama).
+`llm-router-utils` is a collection of **CLI tools** and **reusable helpers** built on top of **LLM Router** – a flexible
+language-model router that load-balances across multiple backends (vLLM, llama.cpp, Ollama).
 
-| Tool | Description |
-|------|-------------|
-| `translate-texts` | Batch-translate texts in JSON / JSONL datasets via the LLM Router API. Supports multi-threading, configurable batch sizes, and field selection. |
-| `genai-classifier` | Classify texts from HuggingFace datasets or XLSX files against custom prompts, with optional automatic Excel (XLSX) export. |
-| `HfDatasetHandler` | Static helpers for normalising dataset IDs, downloading & saving datasets to disk, and loading them back. |
-| `dataset_list` | Pre-configured mental-health dataset field mappings for translation and classification pipelines. |
-| `jsonl_to_xlsx` | Convert classifier JSONL output into beautifully formatted Excel workbooks. |
+| Tool                      | Description                                                                                                                                     |
+|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `translate-texts`         | Batch-translate texts in JSON / JSONL datasets via the LLM Router API. Supports multi-threading, configurable batch sizes, and field selection. |
+| `genai-classifier`        | Classify texts from HuggingFace datasets or XLSX files against custom prompts, with optional automatic Excel (XLSX) export.                     |
+| `genai-data-augmentation` | Augment text datasets by generating new examples based on existing samples via LLM.                                                             |
+| `HfDatasetHandler`        | Static helpers for normalising dataset IDs, downloading & saving datasets to disk, and loading them back.                                       |
+| `dataset_list`            | Pre-configured mental-health dataset field mappings for translation and classification pipelines.                                               |
+| `jsonl_to_xlsx`           | Convert classifier JSONL output into beautifully formatted Excel workbooks.                                                                     |
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Batch translation** | Sends texts to the router in configurable batch sizes (default 8). |
-| **Parallel execution** | Optional multi-threaded mode with a configurable worker pool. |
-| **Field selection** | Keep only the fields you care about (`--accept-field`). |
-| **Dataset type detection** | Auto-detects `.json` and `.jsonl` files. |
-| **GenAI classification** | Classify texts against prompt-defined classes with retry logic and JSON parsing. |
-| **XLSX export** | Automatic or manual conversion of JSONL to formatted Excel with zebra striping and conditional colors. |
-| **HuggingFace helpers** | Normalise identifiers, download, save to disk, and load datasets locally. |
-| **Progress feedback** | `tqdm` progress bars for both single- and multi-threaded runs. |
+| Feature                    | Description                                                                                            |
+|----------------------------|--------------------------------------------------------------------------------------------------------|
+| **Batch translation**      | Sends texts to the router in configurable batch sizes (default 8).                                     |
+| **Parallel execution**     | Optional multi-threaded mode with a configurable worker pool.                                          |
+| **Field selection**        | Keep only the fields you care about (`--accept-field`).                                                |
+| **Dataset type detection** | Auto-detects `.json` and `.jsonl` files.                                                               |
+| **GenAI classification**   | Classify texts against prompt-defined classes with retry logic and JSON parsing.                       |
+| **Data Augmentation**      | Generate new training examples based on existing samples with label filtering.                         |
+| **XLSX export**            | Automatic or manual conversion of JSONL to formatted Excel with zebra striping and conditional colors. |
+| **HuggingFace helpers**    | Normalise identifiers, download, save to disk, and load datasets locally.                              |
+| **Progress feedback**      | `tqdm` progress bars for both single- and multi-threaded runs.                                         |
 
 ## Installation
 
@@ -65,15 +69,15 @@ translate-texts \
 
 **Key flags:**
 
-| Flag | Purpose |
-|------|---------|
-| `--llm-router-host` | Base URL of the LLM Router service. |
-| `--model` | Model name for translation (e.g., `speakleash/Bielik-11B-v2.3-Instruct`). |
-| `--dataset-path` | Path to a dataset file; repeatable. |
-| `--accept-field` | Fields to retain and translate; repeatable. |
-| `--batch-size` | Texts per API request (default 8). |
-| `--num-workers` | Parallel threads (default 1 → sequential). |
-| `--dataset-type` | Force `json` or `jsonl`; otherwise auto-detected from extension. |
+| Flag                | Purpose                                                                   |
+|---------------------|---------------------------------------------------------------------------|
+| `--llm-router-host` | Base URL of the LLM Router service.                                       |
+| `--model`           | Model name for translation (e.g., `speakleash/Bielik-11B-v2.3-Instruct`). |
+| `--dataset-path`    | Path to a dataset file; repeatable.                                       |
+| `--accept-field`    | Fields to retain and translate; repeatable.                               |
+| `--batch-size`      | Texts per API request (default 8).                                        |
+| `--num-workers`     | Parallel threads (default 1 → sequential).                                |
+| `--dataset-type`    | Force `json` or `jsonl`; otherwise auto-detected from extension.          |
 
 ### GenAI Classifier (`genai-classifier`)
 
@@ -92,21 +96,48 @@ genai-classifier \
 
 **Key flags:**
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--dataset-dir` | `Path` | **(required)** | Directory with HF datasets or XLSX files. |
-| `--prompts-dir` | `Path` | **(required)** | Directory with `.prompt` files (one per class). |
-| `--llm-router-url` | `str` | `http://192.168.100.65:8080` | LLM Router URL. |
-| `--model-name` | `str` | `gpt-oss:120b` | Model identifier for the router. |
-| `--temperature` | `float` | `0.0` | Generation temperature (0 = deterministic). |
-| `--num-workers` | `int` | `2` | Parallel worker threads. |
-| `--batch-save-size` | `int` | `5` | Records flushed to disk per batch. |
-| `--n-sample` | `int` | `50` | Random samples per field (0 or omit = all). |
-| `--dry-run` | `flag` | `false` | Process without writing output. |
-| `--output-dir` | `Path` | *(dataset-dir)* | Override output directory. |
-| `--verbose` | `flag` | `false` | DEBUG-level logging. |
-| `--export-xlsx` | `flag` | `true` | Export results to Excel. |
-| `--no-export-xlsx` | `flag` | `false` | Disable XLSX export. |
+| Flag                 | Type    | Default                      | Description                                     |
+|----------------------|---------|------------------------------|-------------------------------------------------|
+| `--dataset-dir`      | `Path`  | **(required)**               | Directory with HF datasets or XLSX files.       |
+| `--prompts-dir`      | `Path`  | **(required)**               | Directory with `.prompt` files (one per class). |
+| `--llm-router-url`   | `str`   | `http://192.168.100.65:8080` | LLM Router URL.                                 |
+| `--model-name`       | `str`   | `gpt-oss:120b`               | Model identifier for the router.                |
+| `--temperature`      | `float` | `0.0`                        | Generation temperature (0 = deterministic).     |
+| `--num-workers`      | `int`   | `2`                          | Parallel worker threads.                        |
+| `--batch-save-size`  | `int`   | `5`                          | Records flushed to disk per batch.              |
+| `--n-sample`         | `int`   | `50`                         | Random samples per field (0 or omit = all).     |
+| `--dry-run`          | `flag`  | `false`                      | Process without writing output.                 |
+| `--output-dir`       | `Path`  | *(dataset-dir)*              | Override output directory.                      |
+| `--verbose`          | `flag`  | `false`                      | DEBUG-level logging.                            |
+| `--export-xlsx`      | `flag`  | `true`                       | Export results to Excel.                        |
+| `--no-export-xlsx`   | `flag`  | `false`                      | Disable XLSX export.                            |
+| `--text-column-name` | `str`   | `Tekst`                      | Name of the column containing the text.         |
+
+### GenAI Data Augmentation (`genai-data-augmentation`)
+
+```bash
+genai-data-augmentation \
+    --dataset-path ./output/dataset_for_augmentation.jsonl \
+    --prompt-file ./prompts/augmentation_prompt.txt \
+    --labels "depresja,lęk" \
+    --n-samples 5 \
+    --num-workers 2 \
+    --llm-router-url http://localhost:8080 \
+    --model-name "speakleash/Bielik-11B-v2.3-Instruct"
+```
+
+**Key flags:**
+
+| Flag                  | Type   | Default        | Description                                     |
+|-----------------------|--------|----------------|-------------------------------------------------|
+| `--dataset-path`      | `Path` | **(required)** | Path to the input dataset (JSONL or XLSX).      |
+| `--prompt-file`       | `Path` | **(required)** | Path to the augmentation prompt file.           |
+| `--labels`            | `str`  | **(required)** | Comma-separated list of labels to augment.      |
+| `--n-samples`         | `int`  | `10`           | Number of samples per class to use as examples. |
+| `--llm-router-url`    | `str`  | `http://...`   | LLM Router URL.                                 |
+| `--model-name`        | `str`  | `gpt-oss:120b` | Model identifier.                               |
+| `--text-column-name`  | `str`  | `Tekst`        | Name of the column containing the text.         |
+| `--label-column-name` | `str`  | `labels`       | Name of the column containing the labels.       |
 
 ## Programmatic Usage
 
@@ -120,7 +151,7 @@ args = argparse.Namespace(
     llm_router_host="http://localhost:8080",
     model="speakleash/Bielik-11B-v2.3-Instruct",
     dataset_path=["data.jsonl", "data.json"],
-    dataset_type=None,        # auto-detect
+    dataset_type=None,  # auto-detect
     accept_field=["text", "title"],
     num_workers=2,
     batch_size=8,
@@ -149,6 +180,23 @@ app = GenAIClassifierApp(
     num_workers=4,
     n_sample=100,
     export_xlsx=True,
+)
+app.run()
+```
+
+### Data Augmentation
+
+```python
+from pathlib import Path
+from llm_router_utils.core.apps.genai_data_augmentation import GenAIDataAugmentationApp
+
+app = GenAIDataAugmentationApp(
+    dataset_path=Path("./output/dataset_for_augmentation.jsonl"),
+    prompt_path=Path("./prompts/augmentation_prompt.txt"),
+    labels=["depresja", "lęk"],
+    n_samples=5,
+    llm_router_url="http://localhost:8080",
+    model_name="speakleash/Bielik-11B-v2.3-Instruct",
 )
 app.run()
 ```
@@ -192,15 +240,16 @@ convert_jsonl_to_xlsx(
 
 ## Dataset List
 
-The package ships with `dataset_list.py` containing pre-configured mental-health datasets and their simplified field mappings:
+The package ships with `dataset_list.py` containing pre-configured mental-health datasets and their simplified field
+mappings:
 
-| Dataset | Simplified fields |
-|---------|-------------------|
-| `nbertagnolli/counsel-chat` | `questionText` |
-| `ShenLab/MentalChat16K` | `input` |
-| `amaye15/suicide-descriptions` | `text` |
-| `marmikpandya/mental-health` | `input` |
-| `usham/mental-health-companion-new` | `input` |
+| Dataset                             | Simplified fields |
+|-------------------------------------|-------------------|
+| `nbertagnolli/counsel-chat`         | `questionText`    |
+| `ShenLab/MentalChat16K`             | `input`           |
+| `amaye15/suicide-descriptions`      | `text`            |
+| `marmikpandya/mental-health`        | `input`           |
+| `usham/mental-health-companion-new` | `input`           |
 
 See `llm_router_utils/dataset_list.py` for the full list.
 
@@ -214,11 +263,13 @@ llm-router-utils/
 │   ├── dataset_list.py                # Pre-configured dataset field mappings
 │   ├── cli/
 │   │   ├── translate_texts.py         # translate-texts CLI entry point
-│   │   └── genai_classifier.py        # genai-classifier CLI entry point
+│   │   ├── genai_classifier.py        # genai-classifier CLI entry point
+│   │   └── genai_data_augmentation.py # genai-data-augmentation CLI entry point
 │   ├── core/
 │   │   ├── apps/
 │   │   │   ├── translate.py           # TranslateApp + TextTranslationService
-│   │   │   └── genai_classifier.py    # GenAIClassifierApp
+│   │   │   ├── genai_classifier.py    # GenAIClassifierApp
+│   │   │   └── genai_data_augmentation.py # GenAIDataAugmentationApp
 │   │   ├── hf_dataset_handler.py      # HfDatasetHandler (HF dataset utilities)
 │   │   └── jsonl_to_xlsx.py           # JSONL → XLSX conversion
 │   └── README.md
@@ -240,9 +291,11 @@ llm-router-utils/
 
 ## Documentation
 
-- **[CLASSIFIER_DATASET.md](CLASSIFIER_DATASET.md)** — Full end-to-end guide for dataset generation with LLM Router and GenAI Classifier (English).
+- **[CLASSIFIER_DATASET.md](CLASSIFIER_DATASET.md)** — Full end-to-end guide for dataset generation with LLM Router and
+  GenAI Classifier (English).
 - **[CLASSIFIER_DATASET_PL.md](CLASSIFIER_DATASET_PL.md)** — Przewodnik generowania datasetu (Polish).
-- **[resources/llm-router-speakleash/README.md](resources/llm-router-speakleash/README.md)** — Speakleash model configuration for LLM Router.
+- **[resources/llm-router-speakleash/README.md](resources/llm-router-speakleash/README.md)** — Speakleash model
+  configuration for LLM Router.
 
 ## License
 
