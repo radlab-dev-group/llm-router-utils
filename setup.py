@@ -46,6 +46,7 @@ setup(
         "console_scripts": {
             "translate-texts=llm_router_utils.cli.translate_texts:main",
             "genai-classifier=llm_router_utils.cli.genai_classifier:main",
+            "genai-data-augmentation=llm_router_utils.cli.genai_data_augmentation:main",
         }
     },
 )
