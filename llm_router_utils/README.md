@@ -145,6 +145,8 @@ genai-data-augmentation \
     --prompt-file ./prompts/augmentation_prompt.txt \
     --labels "label1,label2" \
     --n-samples 5 \
+    --samples-as-examples 5 \
+    --n-examples 3 \
     --num-workers 2
 ```
 
@@ -156,6 +158,8 @@ genai-data-augmentation \
 | `--prompt-file`       | Path to the prompt file defining how to augment.                      |
 | `--labels`            | Comma-separated list of labels for which data should be augmented.    |
 | `--n-samples`         | Number of random samples per class used as examples for augmentation. |
+| `--samples-as-examples` | Number of random samples per class from the dataset to include in the prompt context. |
+| `--n-examples`        | Number of augmented examples the LLM should generate for each input text. |
 | `--text-column-name`  | Name of the column containing the text (default: `Tekst`).            |
 | `--label-column-name` | Name of the column containing the labels (default: `labels`).         |
 

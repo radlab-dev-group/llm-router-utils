@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Set, Tuple, Optional
 
 import pandas as pd
 import tqdm
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from llm_router_lib.client import LLMRouterClient
 from llm_router_utils.core.hf_dataset_handler import HfDatasetHandler
@@ -207,8 +207,8 @@ class GenAIClassifierApp:
         return loaded
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(30),
     )
     def _classify_text(
         self,
