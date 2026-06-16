@@ -47,15 +47,37 @@ class AugmentedRecord:
 
     def to_json(self) -> str:
         """Serialize to a JSON string (ASCII‑safe)."""
-        return json.dumps(
-            {
-                "original_text": self.original_text,
-                "labels": self.labels,
-                "augmented_text": self.augmented_text,
-                "metadata": self.metadata,
-            },
-            ensure_ascii=False,
-        )
+        data = {
+            "original_text": self.original_text,
+            "labels": self.labels,
+            "metadata": self.metadata,
+        }
+
+        # Try to parse augmented_text if it looks like JSON
+        try:
+            # Simple cleaning for common markdown artifacts
+            clean_text = self.augmented_text.strip()
+            if clean_text.startswith("```json"):
+                clean_text = clean_text[7:]
+            if clean_text.startswith("```"):
+                clean_text = clean_text[3:]
+            if clean_text.endswith("```"):
+                clean_text = clean_text[:-3]
+            clean_text = clean_text.strip()
+
+            parsed_augmented = json.loads(clean_text)
+            if isinstance(parsed_augmented, dict):
+                data.update(parsed_augmented)
+            elif isinstance(parsed_augmented, list):
+                # If LLM returns a list of objects (e.g. one for each class),
+                # include it as a structured field instead of a raw string.
+                data["augmented_results"] = parsed_augmented
+            else:
+                data["augmented_text"] = self.augmented_text
+        except (json.JSONDecodeError, TypeError):
+            data["augmented_text"] = self.augmented_text
+
+        return json.dumps(data, ensure_ascii=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -255,10 +277,23 @@ class GenAIDataAugmentationApp:
             # Filter by labels (check if label is in the list of labels)
             if self.label_column_name in df.columns:
                 # Handle both list of labels and single label (string) for backward compatibility
+                import ast
+
                 def matches_label(val):
+                    # Handle string representation of a list (e.g. from XLSX or JSONL)
+                    if (
+                        isinstance(val, str)
+                        and val.strip().startswith("[")
+                        and val.strip().endswith("]")
+                    ):
+                        try:
+                            val = ast.literal_eval(val)
+                        except (ValueError, SyntaxError):
+                            pass
+
                     if isinstance(val, list):
-                        return label in [str(v) for v in val]
-                    return str(val) == label
+                        return label in [str(v).strip() for v in val]
+                    return str(val).strip() == label
 
                 subset = df[df[self.label_column_name].apply(matches_label)]
             else:
@@ -269,7 +304,10 @@ class GenAIDataAugmentationApp:
                 continue
 
             # Sample n_samples
-            n = min(len(subset), self.n_samples)
+            if self.n_samples <= 0:
+                n = len(subset)
+            else:
+                n = min(len(subset), self.n_samples)
             sampled = subset.sample(n=n)
 
             log.info("Enqueuing %d samples for label: %s", n, label)
@@ -277,8 +315,22 @@ class GenAIDataAugmentationApp:
                 text = str(row[self.text_column_name])
                 # We pass the full list of labels for this record to the worker
                 row_labels = row.get(self.label_column_name, [label])
+
+                # Handle string representation of a list
+                if (
+                    isinstance(row_labels, str)
+                    and row_labels.strip().startswith("[")
+                    and row_labels.strip().endswith("]")
+                ):
+                    try:
+                        row_labels = ast.literal_eval(row_labels)
+                    except (ValueError, SyntaxError):
+                        pass
+
                 if not isinstance(row_labels, list):
-                    row_labels = [str(row_labels)]
+                    row_labels = [str(row_labels).strip()]
+                else:
+                    row_labels = [str(L).strip() for L in row_labels]
 
                 task_queue.put((output_path, row_labels, text))
 

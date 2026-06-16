@@ -46,7 +46,7 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         "--n-samples",
         type=int,
         default=5,
-        help="Number of random samples per class as examples to augment.",
+        help="Number of random samples per class as examples to augment (use 0 for all).",
     )
     parser.add_argument(
         "--llm-router-url",
