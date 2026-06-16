@@ -172,7 +172,11 @@ class GenAIClassifierApp:
                                 if line.strip():
                                     dataset_records.append(json.loads(line))
                         # Use keys of the first record as columns if available
-                        columns = list(dataset_records[0].keys()) if dataset_records else []
+                        columns = (
+                            list(dataset_records[0].keys())
+                            if dataset_records
+                            else []
+                        )
                     else:
                         continue
 
@@ -211,7 +215,7 @@ class GenAIClassifierApp:
         prompt_handler: PromptHandler,
         text: str,
         feature_name: str,
-        retry_when_invalid_json: int = 5
+        retry_when_invalid_json: int = 5,
     ) -> Dict[str, Any]:
         """Call the LLM for a single (text, feature) pair and return parsed JSON."""
         prompt_str = prompt_handler.get_prompt(feature_name)
@@ -320,8 +324,11 @@ class GenAIClassifierApp:
             feature_responses: List[Dict[str, Any]] = []
             for feature_name in self.prompts_list:
                 llm_response = self._classify_text(
-                    llm_client, prompt_handler, text, feature_name,
-                    retry_when_invalid_json=5
+                    llm_client,
+                    prompt_handler,
+                    text,
+                    feature_name,
+                    retry_when_invalid_json=5,
                 )
                 feature_responses.append(
                     {"name": feature_name, "response": llm_response}
@@ -467,7 +474,7 @@ class GenAIClassifierApp:
             return
 
         log.info("Converting %d JSONL file(s) to XLSX format...", len(jsonl_files))
-        
+
         for jsonl_file in jsonl_files:
             try:
                 xlsx_file = jsonl_file.with_suffix(".xlsx")

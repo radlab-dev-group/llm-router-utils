@@ -167,7 +167,7 @@ def write_to_excel(
 def convert_jsonl_to_xlsx(jsonl_path: pathlib.Path, xlsx_path: pathlib.Path) -> None:
     """
     Convert a JSONL file to an Excel workbook.
-    
+
     Args:
         jsonl_path: Path to the input JSONL file
         xlsx_path: Path where the Excel file should be saved
