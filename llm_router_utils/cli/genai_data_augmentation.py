@@ -14,7 +14,9 @@ import argparse
 from typing import List
 from pathlib import Path
 
-from llm_router_utils.core.apps.genai_data_augmentation import GenAIDataAugmentationApp
+from llm_router_utils.core.apps.genai_data_augmentation import (
+    GenAIDataAugmentationApp,
+)
 
 
 def prepare_parser(description: str = "") -> argparse.ArgumentParser:

@@ -64,7 +64,7 @@ class AugmentedRecord:
 class GenAIDataAugmentationApp:
     """
     High-level orchestrator for GenAI data augmentation pipeline.
-    
+
     - Loads datasets from XLSX or JSONL.
     - Samples original data for specified labels.
     - Uses LLM to generate augmented versions of the samples.
@@ -120,10 +120,14 @@ class GenAIDataAugmentationApp:
         elif self.dataset_path.suffix == ".jsonl":
             df = pd.read_json(self.dataset_path, lines=True)
         else:
-            raise ValueError(f"Unsupported dataset format: {self.dataset_path.suffix}")
+            raise ValueError(
+                f"Unsupported dataset format: {self.dataset_path.suffix}"
+            )
 
         if self.text_column_name not in df.columns:
-            raise ValueError(f"Column '{self.text_column_name}' not found in dataset.")
+            raise ValueError(
+                f"Column '{self.text_column_name}' not found in dataset."
+            )
         if self.label_column_name not in df.columns:
             log.warning(
                 "Column '%s' not found. Data augmentation will proceed without label filtering if possible.",
@@ -148,7 +152,7 @@ class GenAIDataAugmentationApp:
         # Assuming the prompt expects the text to be augmented.
         labels_str = ", ".join(labels)
         user_input = f"Tekst do augmentacji (klasy: {labels_str}):\n{text}"
-        
+
         payload = {
             "model_name": self.model_name,
             "temperature": self.temperature,
@@ -184,15 +188,18 @@ class GenAIDataAugmentationApp:
                 break
 
             output_path, labels, text = task
-            
+
             try:
                 augmented_text = self._augment_text(llm_client, prompt, text, labels)
-                
+
                 record = AugmentedRecord(
                     original_text=text,
                     labels=labels,
                     augmented_text=augmented_text,
-                    metadata={"model": self.model_name, "temperature": self.temperature}
+                    metadata={
+                        "model": self.model_name,
+                        "temperature": self.temperature,
+                    },
                 )
 
                 need_flush = False
@@ -205,7 +212,9 @@ class GenAIDataAugmentationApp:
                     self._flush_buffer(output_path)
 
             except Exception as exc:
-                log.exception("Failed to augment text for labels %s: %s", labels, exc)
+                log.exception(
+                    "Failed to augment text for labels %s: %s", labels, exc
+                )
             finally:
                 task_queue.task_done()
 
@@ -216,7 +225,7 @@ class GenAIDataAugmentationApp:
 
         out_dir = self.output_dir or self.dataset_path.parent
         jsonl_files = list(out_dir.glob("*_augmented.jsonl"))
-        
+
         for jsonl_path in jsonl_files:
             xlsx_path = jsonl_path.with_suffix(".xlsx")
             log.info("Converting %s to %s", jsonl_path.name, xlsx_path.name)
@@ -228,7 +237,7 @@ class GenAIDataAugmentationApp:
     def run(self) -> None:
         """Run the augmentation pipeline."""
         df = self._load_dataset()
-        
+
         with open(self.prompt_path, "r", encoding="utf-8") as f:
             prompt_content = f.read()
 
@@ -241,7 +250,7 @@ class GenAIDataAugmentationApp:
             self._file_locks[output_path] = threading.Lock()
 
         task_queue = queue.Queue()
-        
+
         for label in self.labels:
             # Filter by labels (check if label is in the list of labels)
             if self.label_column_name in df.columns:
@@ -250,19 +259,19 @@ class GenAIDataAugmentationApp:
                     if isinstance(val, list):
                         return label in [str(v) for v in val]
                     return str(val) == label
-                
+
                 subset = df[df[self.label_column_name].apply(matches_label)]
             else:
-                subset = df # If no labels, use whole dataset? Requirement says labels are provided.
-            
+                subset = df  # If no labels, use whole dataset? Requirement says labels are provided.
+
             if subset.empty:
                 log.warning("No samples found for label: %s", label)
                 continue
-            
+
             # Sample n_samples
             n = min(len(subset), self.n_samples)
             sampled = subset.sample(n=n)
-            
+
             log.info("Enqueuing %d samples for label: %s", n, label)
             for _, row in sampled.iterrows():
                 text = str(row[self.text_column_name])
@@ -270,7 +279,7 @@ class GenAIDataAugmentationApp:
                 row_labels = row.get(self.label_column_name, [label])
                 if not isinstance(row_labels, list):
                     row_labels = [str(row_labels)]
-                
+
                 task_queue.put((output_path, row_labels, text))
 
         if task_queue.empty():
@@ -280,7 +289,9 @@ class GenAIDataAugmentationApp:
         # Start workers
         threads = []
         for _ in range(self.num_workers):
-            t = threading.Thread(target=self._worker, args=(task_queue, prompt_content))
+            t = threading.Thread(
+                target=self._worker, args=(task_queue, prompt_content)
+            )
             t.start()
             threads.append(t)
 
@@ -291,7 +302,7 @@ class GenAIDataAugmentationApp:
 
         # Final flush
         self._flush_buffer(output_path)
-        
+
         # Convert to XLSX
         self._convert_output_files_to_xlsx()
         log.info("Augmentation finished. Output saved to %s", output_path)

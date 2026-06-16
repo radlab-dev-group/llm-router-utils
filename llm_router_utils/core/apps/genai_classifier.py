@@ -308,14 +308,16 @@ class GenAIClassifierApp:
 
         # Backfill missing records in augmentation file
         missing_records = [
-            rec for rec in main_records 
+            rec
+            for rec in main_records
             if (rec.get("field"), rec.get("text")) not in seen_aug
         ]
 
         if missing_records:
             log.info(
                 "Converting %d missing records to augmentation format in %s",
-                len(missing_records), aug_path.name
+                len(missing_records),
+                aug_path.name,
             )
             with aug_path.open("a", encoding="utf-8") as f:
                 for rec in missing_records:
@@ -558,7 +560,7 @@ class GenAIClassifierApp:
             try:
                 xlsx_file = jsonl_file.with_suffix(".xlsx")
                 log.info("Converting %s to %s", jsonl_file.name, xlsx_file.name)
-                # Use simple pandas conversion for augmentation files to avoid pretty formatting 
+                # Use simple pandas conversion for augmentation files to avoid pretty formatting
                 # that expects specific structure
                 if jsonl_file.stem.endswith("_clean_labels"):
                     df = pd.read_json(jsonl_file, lines=True)
