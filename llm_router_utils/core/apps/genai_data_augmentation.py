@@ -180,7 +180,9 @@ class GenAIDataAugmentationApp:
     ) -> str:
         """Call the LLM to augment a single text."""
         # Replace placeholders in the prompt
-        final_prompt = prompt.replace("{CLASS_LIST_PLACEHOLDER}", ", ".join(self.labels))
+        final_prompt = prompt.replace(
+            "{CLASS_LIST_PLACEHOLDER}", ", ".join(self.labels)
+        )
         final_prompt = final_prompt.replace(
             "{SAMPLES_PER_CLASS_PLACEHOLDER}", str(self.n_examples)
         )
@@ -212,9 +214,10 @@ class GenAIDataAugmentationApp:
                 self._buffers[path] = []
 
             log.debug("Flushing %d records to %s", len(records), path)
-            with path.open("a", encoding="utf-8") as f, train_path.open(
-                "a", encoding="utf-8"
-            ) as f_train:
+            with (
+                path.open("a", encoding="utf-8") as f,
+                train_path.open("a", encoding="utf-8") as f_train,
+            ):
                 for rec in records:
                     f.write(rec.to_json() + "\n")
 
