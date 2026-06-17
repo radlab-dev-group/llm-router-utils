@@ -1,46 +1,64 @@
 """
-Command-line interface for the GenAI classifier application.
-
-This module provides the CLI entry point for classifying translated datasets
-using an LLM Router service.
+Command-line interface for the GenAI data augmentation application.
 
 Example usage:
-    genai-classifier \
-        --dataset-dir ./data \
-        --prompts-dir ./prompts \
-        --llm-router-url http://localhost:8080 \
-        --model-name gpt-oss:120b \
-        --num-workers 2 \
-        --n-sample 50
+    genai-data-augmentation \
+        --dataset-path ./data/dataset_for_augmentation.jsonl \
+        --prompt-file ./prompts/augmentation_prompt.txt \
+        --labels "label1,label2" \
+        --n-samples 5 \
+        --num-workers 2
 """
 
 import argparse
-
 from typing import List
 from pathlib import Path
 
-from llm_router_utils.core.apps.genai_classifier import GenAIClassifierApp
+from llm_router_utils.core.apps.genai_data_augmentation import (
+    GenAIDataAugmentationApp,
+)
 
 
-# ----------------------------------------------------------------------
-# Argument parsing
-# ----------------------------------------------------------------------
 def prepare_parser(description: str = "") -> argparse.ArgumentParser:
     """Build the ``argparse`` parser for the command-line interface."""
     parser = argparse.ArgumentParser(
-        description=description or "Classify translated datasets using LLMRouter."
+        description=description or "Augment datasets using LLMRouter."
     )
     parser.add_argument(
-        "--dataset-dir",
+        "--dataset-path",
         type=Path,
         required=True,
-        help="Directory containing downloaded HF datasets.",
+        help="Path to the dataset file (XLSX or JSONL).",
     )
     parser.add_argument(
-        "--prompts-dir",
+        "--prompt-file",
         type=Path,
         required=True,
-        help="Directory with prompt files.",
+        help="Path to the prompt file.",
+    )
+    parser.add_argument(
+        "--labels",
+        type=str,
+        required=True,
+        help="Comma-separated list of labels to augment.",
+    )
+    parser.add_argument(
+        "--n-samples",
+        type=int,
+        default=5,
+        help="Number of random samples per class as examples to augment (use 0 for all).",
+    )
+    parser.add_argument(
+        "--n-examples",
+        type=int,
+        default=3,
+        help="Number of augmented examples the LLM should generate for each input text.",
+    )
+    parser.add_argument(
+        "--samples-as-examples",
+        type=int,
+        default=5,
+        help="Number of random samples per class from the dataset to include in the prompt context.",
     )
     parser.add_argument(
         "--llm-router-url",
@@ -55,14 +73,14 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
     parser.add_argument(
         "--temperature",
         type=float,
-        default=0.0,
+        default=0.7,
         help="Sampling temperature for the model.",
     )
     parser.add_argument(
         "--batch-save-size",
         type=int,
         default=5,
-        help="How many aggregated records are written to disk at once.",
+        help="How many records are written to disk at once.",
     )
     parser.add_argument(
         "--dry-run",
@@ -72,7 +90,7 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        help="Override directory where result .jsonl files are stored.",
+        help="Override directory where result files are stored.",
     )
     parser.add_argument(
         "--verbose",
@@ -83,21 +101,17 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         "--num-workers",
         type=int,
         default=2,
-        help="Number of parallel worker threads (and LLM clients).",
-    )
-    parser.add_argument(
-        "--n-sample",
-        type=int,
-        default=50,
-        help=(
-            "Number of random samples per field (default: all). "
-            "If omitted, zero or negative, all examples are processed."
-        ),
+        help="Number of parallel worker threads.",
     )
     parser.add_argument(
         "--text-column-name",
         default="Tekst",
-        help="Name of the column containing the text to classify (default: 'Tekst').",
+        help="Name of the column containing the text (default: 'Tekst').",
+    )
+    parser.add_argument(
+        "--label-column-name",
+        default="label",
+        help="Name of the column containing the label (default: 'label').",
     )
     parser.add_argument(
         "--export-xlsx",
@@ -108,36 +122,36 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         "--no-export-xlsx",
         dest="export_xlsx",
         action="store_false",
-        help="Disable XLSX export (only save JSONL files).",
+        help="Disable XLSX export.",
     )
     parser.set_defaults(export_xlsx=True)
     return parser
 
 
-# ----------------------------------------------------------------------
-# Entry point
-# ----------------------------------------------------------------------
 def main(argv: List[str] | None = None) -> None:
     """Parse arguments, build the app and run it."""
     args = prepare_parser().parse_args(argv)
 
-    # Convert n_sample to None if it's zero or negative (meaning "process all")
-    n_sample = args.n_sample if args.n_sample and args.n_sample > 0 else None
+    labels = args.labels.split(",")
 
-    app = GenAIClassifierApp(
-        dataset_dir=args.dataset_dir,
-        prompts_dir=args.prompts_dir,
+    app = GenAIDataAugmentationApp(
+        dataset_path=args.dataset_path,
+        prompt_path=args.prompt_file,
+        labels=labels,
         llm_router_url=args.llm_router_url,
         model_name=args.model_name,
         temperature=args.temperature,
+        n_samples=args.n_samples,
+        n_examples=args.n_examples,
+        samples_as_examples=args.samples_as_examples,
         batch_save_size=args.batch_save_size,
         dry_run=args.dry_run,
         output_dir=args.output_dir,
         verbose=args.verbose,
         num_workers=args.num_workers,
-        n_sample=n_sample,
         export_xlsx=args.export_xlsx,
         text_column_name=args.text_column_name,
+        label_column_name=args.label_column_name,
     )
     app.run()
 

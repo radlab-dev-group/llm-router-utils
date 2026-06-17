@@ -11,6 +11,9 @@ handle Hugging Face datasets, and integrate the router into Python applications.
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start (CLI)](#quick-start-cli)
+    - [Translation](#translation)
+    - [GenAI Classification](#genai-classification)
+    - [GenAI Data Augmentation](#genai-data-augmentation)
 - [Programmatic Usage](#programmatic-usage)
 - [Dataset Helpers (Hugging Face)](#dataset-helpers-huggingface)
 - [License](#license)
@@ -22,8 +25,11 @@ handle Hugging Face datasets, and integrate the router into Python applications.
 `llm-router-utils` bundles a small but handy set of helpers around the **LLM Router** HTTP API:
 
 * **CLI** (`translate_texts.py`) – translate one or more JSON/JSON‑Lines datasets in a single command.
-* **Core library** – reusable classes (`TranslateApp`, `TextTranslationService`) for embedding translation logic in your
-  own scripts.
+* **GenAI Classifier** (`genai_classifier.py`) – classify text datasets using prompts and LLM Router.
+* **GenAI Data Augmentation** (`genai_data_augmentation.py`) – augment text datasets by generating new examples based on
+  existing samples.
+* **Core library** – reusable classes (`TranslateApp`, `GenAIClassifierApp`, `GenAIDataAugmentationApp`,
+  `TextTranslationService`) for embedding logic in your own scripts.
 * **Hugging Face dataset utilities** – normalize identifiers, safely map them to local directories, download, and load
   datasets.
 
@@ -66,10 +72,12 @@ pip install -e .
 
 ## Quick Start (CLI)
 
+### Translation
+
 Translate one or more JSON/JSON‑Lines files using the bundled CLI tool:
 
 ```shell script
-python -m llm_router_utils.cli.translate_texts \
+translate-texts \
     --llm-router-host http://localhost:8000 \
     --model speakleash/Bielik-11B-v2.3-Instruct \
     --dataset-path data1.jsonl \
@@ -91,8 +99,75 @@ python -m llm_router_utils.cli.translate_texts \
 | `--batch-size`      | Number of texts per API request (default 8).                   |
 | `--num-workers`     | Number of parallel threads (default 1 → sequential).           |
 
-The command prints a stream of JSON objects – each line corresponds to a translated record containing only the selected
-fields.
+---
+
+### GenAI Classification
+
+Classify datasets using LLM Router and specific prompts for each feature.
+
+```shell script
+genai-classifier \
+    --dataset-dir ./data \
+    --prompts-dir ./prompts \
+    --llm-router-url http://localhost:8080 \
+    --model-name gpt-oss:120b \
+    --num-workers 2 \
+    --n-sample 50
+```
+
+**Key flags for Classifier**
+
+| Flag                 | Purpose                                                                |
+|----------------------|------------------------------------------------------------------------|
+| `--dataset-dir`      | Directory containing `.xlsx` or `.jsonl` datasets.                     |
+| `--prompts-dir`      | Directory containing prompt files (one per feature).                   |
+| `--llm-router-url`   | Base URL of the LLMRouter service.                                     |
+| `--model-name`       | Model identifier passed to the router.                                 |
+| `--n-sample`         | Number of random samples per field (default: 50, use 0 for all).       |
+| `--num-workers`      | Number of parallel worker threads.                                     |
+| `--text-column-name` | Name of the column containing the text to classify (default: `Tekst`). |
+
+**Outputs:**
+
+- Generates a main `.jsonl` file with all LLM responses.
+- Generates a `*_for_augmentation.jsonl` file with simplified labels for use with the augmentator.
+- Automatically exports to `.xlsx` (if not disabled by `--no-export-xlsx`).
+
+---
+
+### GenAI Data Augmentation
+
+Augment datasets by generating new examples based on existing samples.
+
+```shell script
+genai-data-augmentation \
+    --dataset-path ./data/dataset_for_augmentation.jsonl \
+    --prompt-file ./prompts/augmentation_prompt.txt \
+    --labels "label1,label2" \
+    --n-samples 5 \
+    --samples-as-examples 5 \
+    --n-examples 3 \
+    --num-workers 2
+```
+
+**Key flags for Augmentation**
+
+| Flag                  | Purpose                                                               |
+|-----------------------|-----------------------------------------------------------------------|
+| `--dataset-path`      | Path to the dataset file (XLSX or JSONL).                             |
+| `--prompt-file`       | Path to the prompt file defining how to augment.                      |
+| `--labels`            | Comma-separated list of labels for which data should be augmented.    |
+| `--n-samples`         | Number of random samples per class used as examples for augmentation. |
+| `--samples-as-examples` | Number of random samples per class from the dataset to include in the prompt context. |
+| `--n-examples`        | Number of augmented examples the LLM should generate for each input text. |
+| `--text-column-name`  | Name of the column containing the text (default: `Tekst`).            |
+| `--label-column-name` | Name of the column containing the labels (default: `labels`).         |
+
+**Outputs:**
+
+- Generates `*_augmented.jsonl` and `*_augmented.xlsx` with original texts and their augmented versions.
+
+The command prints a stream of JSON objects or progress information depending on the tool.
 
 ---
 
@@ -127,8 +202,8 @@ The `TranslateApp` class encapsulates the whole workflow:
 
 1. Load records via `DatasetProcessor`.
 2. Flatten selected fields.
-3. Translate in batches (single‑ or multi‑threaded).
-4. Re‑assemble the original structure and expose the result as JSON strings.
+3. Translate, Classify or Augment in batches (single‑ or multi‑threaded).
+4. Re‑assemble the original structure and expose the result.
 
 ---
 

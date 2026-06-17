@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Set, Tuple, Optional
 
 import pandas as pd
 import tqdm
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from llm_router_lib.client import LLMRouterClient
 from llm_router_utils.core.hf_dataset_handler import HfDatasetHandler
@@ -77,8 +77,9 @@ class GenAIClassifierApp:
     """
     High-level orchestrator for GenAI classification pipeline.
 
-    This class handles the classification of translated datasets using an LLM Router service.
-    It can be used both from CLI and as a library component.
+    - Generates a main .jsonl file with all LLM responses.
+    - Generates a `*_for_augmentation.jsonl` file with simplified labels for use with the augmentator.
+    - Automatically exports to .xlsx (if not disabled).
     """
 
     def __init__(
@@ -206,8 +207,8 @@ class GenAIClassifierApp:
         return loaded
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(30),
     )
     def _classify_text(
         self,
@@ -307,14 +308,16 @@ class GenAIClassifierApp:
 
         # Backfill missing records in augmentation file
         missing_records = [
-            rec for rec in main_records 
+            rec
+            for rec in main_records
             if (rec.get("field"), rec.get("text")) not in seen_aug
         ]
 
         if missing_records:
             log.info(
                 "Converting %d missing records to augmentation format in %s",
-                len(missing_records), aug_path.name
+                len(missing_records),
+                aug_path.name,
             )
             with aug_path.open("a", encoding="utf-8") as f:
                 for rec in missing_records:
@@ -557,7 +560,7 @@ class GenAIClassifierApp:
             try:
                 xlsx_file = jsonl_file.with_suffix(".xlsx")
                 log.info("Converting %s to %s", jsonl_file.name, xlsx_file.name)
-                # Use simple pandas conversion for augmentation files to avoid pretty formatting 
+                # Use simple pandas conversion for augmentation files to avoid pretty formatting
                 # that expects specific structure
                 if jsonl_file.stem.endswith("_clean_labels"):
                     df = pd.read_json(jsonl_file, lines=True)

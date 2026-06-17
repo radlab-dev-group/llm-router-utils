@@ -7,12 +7,12 @@ sends them to the router for translation, and prints the JSON response.
 
 Example usage
 -------------
-$ python translate_texts.py \\
-    --llm-router-host http://localhost:8000 \\
-    --model speakleash/Bielik-11B-v2.3-Instruct \\
-    --dataset-path data1.jsonl \\
-    --dataset-path data2.json \\
-    --accept-field text \\
+$ translate-texts \
+    --llm-router-host http://localhost:8000 \
+    --model speakleash/Bielik-11B-v2.3-Instruct \
+    --dataset-path data1.jsonl \
+    --dataset-path data2.json \
+    --accept-field text \
     --accept-field title
 """
 
