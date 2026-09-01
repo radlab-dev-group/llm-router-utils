@@ -238,6 +238,7 @@ class GenAIClassifierApp:
             raw_json = response.response or "{}"
             try:
                 raw_json = raw_json.replace("json\n", "")
+                raw_json = raw_json.replace("```", "")
                 parsed = json.loads(raw_json)
                 break
             except json.JSONDecodeError:
@@ -247,6 +248,7 @@ class GenAIClassifierApp:
                     feature_name,
                     retry_when_invalid_json,
                 )
+                log.error(raw_json)
                 retry_when_invalid_json -= 1
 
                 log.warning("=" * 100)
