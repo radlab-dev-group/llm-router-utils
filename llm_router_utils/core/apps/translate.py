@@ -13,7 +13,9 @@ class TextTranslationService:
     """Wrap LLMRouterClient for translation calls."""
 
     def __init__(self, router_host: str, model: str, token: Optional[str] = None):
-        self.client = LLMRouterClient(api=router_host, timeout=30, retries=2, token=token)
+        self.client = LLMRouterClient(
+            api=router_host, timeout=30, retries=2, token=token
+        )
         self.model = model
 
     def translate(self, texts: List[str]) -> List[str]:

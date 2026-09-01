@@ -246,7 +246,9 @@ class GenAIDataAugmentationApp:
         self, task_queue: queue.Queue, prompt: str, all_samples_info: str
     ) -> None:
         """Worker thread for processing augmentation tasks."""
-        llm_client = LLMRouterClient(self.llm_router_url, token=self.llm_router_token)
+        llm_client = LLMRouterClient(
+            self.llm_router_url, token=self.llm_router_token
+        )
 
         try:
             while True:
