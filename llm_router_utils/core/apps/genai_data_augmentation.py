@@ -192,15 +192,13 @@ class GenAIDataAugmentationApp:
 
         user_input = text
 
-        payload = {
-            "model_name": self.model_name,
-            "temperature": self.temperature,
-            "system_prompt": final_prompt,
-            "user_last_statement": user_input,
-        }
-
-        response = llm_client.extended_conversation_with_model(payload=payload)
-        return response.get("response", "").strip()
+        response = llm_client.extended_conversation_with_model(
+            user_last_statement=user_input,
+            system_prompt=final_prompt,
+            model=self.model_name,
+            temperature=self.temperature,
+        )
+        return (response.response or "").strip()
 
     def _flush_buffer(self, path: Path) -> None:
         """Write records from buffer to disk and clear buffer."""
@@ -248,44 +246,47 @@ class GenAIDataAugmentationApp:
         """Worker thread for processing augmentation tasks."""
         llm_client = LLMRouterClient(self.llm_router_url)
 
-        while True:
-            try:
-                task = task_queue.get(timeout=1)
-            except queue.Empty:
-                break
+        try:
+            while True:
+                try:
+                    task = task_queue.get(timeout=1)
+                except queue.Empty:
+                    break
 
-            output_path, labels, text = task
+                output_path, labels, text = task
 
-            try:
-                augmented_text = self._augment_text(
-                    llm_client, prompt, text, labels, all_samples_info
-                )
+                try:
+                    augmented_text = self._augment_text(
+                        llm_client, prompt, text, labels, all_samples_info
+                    )
 
-                record = AugmentedRecord(
-                    original_text=text,
-                    labels=labels,
-                    augmented_text=augmented_text,
-                    metadata={
-                        "model": self.model_name,
-                        "temperature": self.temperature,
-                    },
-                )
+                    record = AugmentedRecord(
+                        original_text=text,
+                        labels=labels,
+                        augmented_text=augmented_text,
+                        metadata={
+                            "model": self.model_name,
+                            "temperature": self.temperature,
+                        },
+                    )
 
-                need_flush = False
-                with self._buffers_lock:
-                    self._buffers[output_path].append(record)
-                    if len(self._buffers[output_path]) >= self.batch_save_size:
-                        need_flush = True
+                    need_flush = False
+                    with self._buffers_lock:
+                        self._buffers[output_path].append(record)
+                        if len(self._buffers[output_path]) >= self.batch_save_size:
+                            need_flush = True
 
-                if need_flush:
-                    self._flush_buffer(output_path)
+                    if need_flush:
+                        self._flush_buffer(output_path)
 
-            except Exception as exc:
-                log.exception(
-                    "Failed to augment text for labels %s: %s", labels, exc
-                )
-            finally:
-                task_queue.task_done()
+                except Exception as exc:
+                    log.exception(
+                        "Failed to augment text for labels %s: %s", labels, exc
+                    )
+                finally:
+                    task_queue.task_done()
+        finally:
+            llm_client.close()
 
     def _convert_output_files_to_xlsx(self) -> None:
         """Convert all generated JSONL files to XLSX format."""
