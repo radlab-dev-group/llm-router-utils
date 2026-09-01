@@ -72,6 +72,12 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         help="Authentication token for the LLMRouter service.",
     )
     parser.add_argument(
+        "--llm-router-timeout",
+        type=int,
+        default=10,
+        help="Per-request timeout in seconds for LLMRouter calls (default: 10).",
+    )
+    parser.add_argument(
         "--model-name",
         default="gpt-oss:120b",
         help="Model identifier passed to the router.",
@@ -146,6 +152,7 @@ def main(argv: List[str] | None = None) -> None:
         labels=labels,
         llm_router_url=args.llm_router_url,
         llm_router_token=args.llm_router_token,
+        llm_router_timeout=args.llm_router_timeout,
         model_name=args.model_name,
         temperature=args.temperature,
         n_samples=args.n_samples,

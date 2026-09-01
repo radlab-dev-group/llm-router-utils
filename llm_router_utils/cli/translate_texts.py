@@ -41,6 +41,12 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         help="Authentication token for the LLMRouter service.",
     )
     parser.add_argument(
+        "--llm-router-timeout",
+        type=int,
+        default=10,
+        help="Per-request timeout in seconds for LLMRouter calls (default: 10).",
+    )
+    parser.add_argument(
         "--model",
         required=True,
         help="Model name to use for translation "
