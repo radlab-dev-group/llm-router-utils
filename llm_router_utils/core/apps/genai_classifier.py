@@ -224,18 +224,16 @@ class GenAIClassifierApp:
         if _ADDITIONAL_PROMPT_JSON and len(_ADDITIONAL_PROMPT_JSON.strip()):
             prompt_str += f"\n{_ADDITIONAL_PROMPT_JSON}"
 
-        payload = {
-            "model_name": self.model_name,
-            "temperature": self.temperature,
-            "system_prompt": prompt_str,
-            "user_last_statement": text,
-        }
-
         parsed = None
         raw_json = None
         while retry_when_invalid_json > 0:
-            response = llm_client.extended_conversation_with_model(payload=payload)
-            raw_json = response.get("response", "{}")
+            response = llm_client.extended_conversation_with_model(
+                user_last_statement=text,
+                system_prompt=prompt_str,
+                model=self.model_name,
+                temperature=self.temperature,
+            )
+            raw_json = response.response or "{}"
             try:
                 raw_json = raw_json.replace("json\n", "")
                 parsed = json.loads(raw_json)
@@ -393,44 +391,47 @@ class GenAIClassifierApp:
 
         self.prompts_list = list(prompt_handler.list_prompts().keys())
 
-        while True:
-            try:
-                output_path, field, text = task_queue.get(
-                    timeout=1
-                )  # (Path, str, str)
-            except queue.Empty:
-                break  # no more work
+        try:
+            while True:
+                try:
+                    output_path, field, text = task_queue.get(
+                        timeout=1
+                    )  # (Path, str, str)
+                except queue.Empty:
+                    break  # no more work
 
-            # ---- classification -------------------------------------------------
-            feature_responses: List[Dict[str, Any]] = []
-            for feature_name in self.prompts_list:
-                llm_response = self._classify_text(
-                    llm_client,
-                    prompt_handler,
-                    text,
-                    feature_name,
-                    retry_when_invalid_json=5,
+                # ---- classification -------------------------------------------------
+                feature_responses: List[Dict[str, Any]] = []
+                for feature_name in self.prompts_list:
+                    llm_response = self._classify_text(
+                        llm_client,
+                        prompt_handler,
+                        text,
+                        feature_name,
+                        retry_when_invalid_json=5,
+                    )
+                    feature_responses.append(
+                        {"name": feature_name, "response": llm_response}
+                    )
+
+                aggregated = AggregatedRecord(
+                    text=text, field=field, features=feature_responses
                 )
-                feature_responses.append(
-                    {"name": feature_name, "response": llm_response}
-                )
 
-            aggregated = AggregatedRecord(
-                text=text, field=field, features=feature_responses
-            )
+                # ---- store result in shared buffer -----------------------------------
+                need_flush = False
+                with self._buffers_lock:
+                    buf = self._buffers.setdefault(output_path, [])
+                    buf.append(aggregated)
+                    if len(buf) >= self.batch_save_size:
+                        need_flush = True
 
-            # ---- store result in shared buffer -----------------------------------
-            need_flush = False
-            with self._buffers_lock:
-                buf = self._buffers.setdefault(output_path, [])
-                buf.append(aggregated)
-                if len(buf) >= self.batch_save_size:
-                    need_flush = True
+                if need_flush:
+                    self._flush_buffer(output_path)
 
-            if need_flush:
-                self._flush_buffer(output_path)
-
-            task_queue.task_done()
+                task_queue.task_done()
+        finally:
+            llm_client.close()
 
     # --------------------------------------------------------------------------- #
     # Dataset preparation – enqueues tasks
@@ -531,10 +532,13 @@ class GenAIClassifierApp:
     def _log_startup_info(self) -> None:
         """Log version info and optional verbose configuration details."""
         client = LLMRouterClient(self.llm_router_url)
-        version_info = client.version()
+        try:
+            version_info = client.version()
+        finally:
+            client.close()
         log.info(
             "Using LLMRouter version %s",
-            version_info.get("version", "unknown"),
+            version_info.version or "unknown",
         )
         if self.verbose:
             log.debug("Full configuration: %s", self.__dict__)
