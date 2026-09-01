@@ -206,3 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 /.idea/*
+cache-translations/*
+resources/llm-router-speakleash/speakleash/Bielik-11B-v2.3-Instruct
+resources/llm-router-speakleash/speakleash/Bielik-Guard-0.1B-v1.0
