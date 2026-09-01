@@ -16,9 +16,10 @@ class TextTranslationService:
         self.client = LLMRouterClient(api=router_host, timeout=30, retries=2)
         self.model = model
 
-    def translate(self, texts: List[str]) -> Any:
-        """Send ``texts`` to the router and return the raw response."""
-        return self.client.translate(model=self.model, texts=texts)
+    def translate(self, texts: List[str]) -> List[str]:
+        """Send ``texts`` to the router and return the translated strings."""
+        response = self.client.translate(model=self.model, texts=texts)
+        return [item.translated for item in response.response]
 
 
 class TranslateApp:
