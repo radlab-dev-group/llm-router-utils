@@ -2,7 +2,7 @@ import json
 import argparse
 
 from tqdm import tqdm
-from typing import List, Any
+from typing import List, Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from llm_router_lib.client import LLMRouterClient
@@ -12,8 +12,8 @@ from rdl_ml_utils.utils.dataset_processor import DatasetProcessor
 class TextTranslationService:
     """Wrap LLMRouterClient for translation calls."""
 
-    def __init__(self, router_host: str, model: str):
-        self.client = LLMRouterClient(api=router_host, timeout=30, retries=2)
+    def __init__(self, router_host: str, model: str, token: Optional[str] = None):
+        self.client = LLMRouterClient(api=router_host, timeout=30, retries=2, token=token)
         self.model = model
 
     def translate(self, texts: List[str]) -> List[str]:
@@ -34,7 +34,9 @@ class TranslateApp:
             dataset_type=args.dataset_type,
             accept_fields=self.accept_fields,
         )
-        self.service = TextTranslationService(args.llm_router_host, args.model)
+        self.service = TextTranslationService(
+            args.llm_router_host, args.model, getattr(args, "llm_router_token", None)
+        )
 
         # optional configuration values
         self.num_workers = getattr(args, "num_workers", 1)

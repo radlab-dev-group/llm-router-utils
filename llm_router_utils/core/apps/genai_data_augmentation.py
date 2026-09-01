@@ -104,6 +104,7 @@ class GenAIDataAugmentationApp:
         labels: List[str],
         llm_router_url: str,
         model_name: str,
+        llm_router_token: Optional[str] = None,
         temperature: float = 0.7,
         n_samples: int = 5,
         n_examples: int = 3,
@@ -121,6 +122,7 @@ class GenAIDataAugmentationApp:
         self.prompt_path = prompt_path
         self.labels = [L.strip() for L in labels]
         self.llm_router_url = llm_router_url
+        self.llm_router_token = llm_router_token
         self.model_name = model_name
         self.temperature = temperature
         self.n_samples = n_samples
@@ -244,7 +246,7 @@ class GenAIDataAugmentationApp:
         self, task_queue: queue.Queue, prompt: str, all_samples_info: str
     ) -> None:
         """Worker thread for processing augmentation tasks."""
-        llm_client = LLMRouterClient(self.llm_router_url)
+        llm_client = LLMRouterClient(self.llm_router_url, token=self.llm_router_token)
 
         try:
             while True:
