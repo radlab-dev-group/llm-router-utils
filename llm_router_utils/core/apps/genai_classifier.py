@@ -90,6 +90,7 @@ class GenAIClassifierApp:
         model_name: str,
         temperature: float = 0.0,
         llm_router_token: Optional[str] = None,
+        llm_router_timeout: int = 10,
         prompts_list: Optional[List[str]] = None,
         batch_save_size: int = 5,
         dry_run: bool = False,
@@ -104,6 +105,7 @@ class GenAIClassifierApp:
         self.prompts_dir = prompts_dir
         self.llm_router_url = llm_router_url
         self.llm_router_token = llm_router_token
+        self.llm_router_timeout = llm_router_timeout
         self.model_name = model_name
         self.temperature = temperature
         self.prompts_list = prompts_list or []
@@ -392,7 +394,7 @@ class GenAIClassifierApp:
         """Thread target – consumes tasks and classifies texts."""
         prompt_handler = PromptHandler(str(prompts_dir))
         llm_client = LLMRouterClient(
-            self.llm_router_url, token=self.llm_router_token
+            self.llm_router_url, token=self.llm_router_token, timeout=self.llm_router_timeout
         )
 
         self.prompts_list = list(prompt_handler.list_prompts().keys())
@@ -537,7 +539,7 @@ class GenAIClassifierApp:
 
     def _log_startup_info(self) -> None:
         """Log version info and optional verbose configuration details."""
-        client = LLMRouterClient(self.llm_router_url, token=self.llm_router_token)
+        client = LLMRouterClient(self.llm_router_url, token=self.llm_router_token, timeout=self.llm_router_timeout)
         try:
             version_info = client.version()
         finally:

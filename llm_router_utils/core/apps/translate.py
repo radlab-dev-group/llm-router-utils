@@ -12,9 +12,11 @@ from rdl_ml_utils.utils.dataset_processor import DatasetProcessor
 class TextTranslationService:
     """Wrap LLMRouterClient for translation calls."""
 
-    def __init__(self, router_host: str, model: str, token: Optional[str] = None):
+    def __init__(
+        self, router_host: str, model: str, token: Optional[str] = None, timeout: int = 10
+    ):
         self.client = LLMRouterClient(
-            api=router_host, timeout=30, retries=2, token=token
+            api=router_host, timeout=timeout, retries=2, token=token
         )
         self.model = model
 
@@ -37,7 +39,10 @@ class TranslateApp:
             accept_fields=self.accept_fields,
         )
         self.service = TextTranslationService(
-            args.llm_router_host, args.model, getattr(args, "llm_router_token", None)
+            router_host=args.llm_router_host,
+            model=args.model,
+            token=args.llm_router_token,
+            timeout=args.llm_router_timeout,
         )
 
         # optional configuration values
