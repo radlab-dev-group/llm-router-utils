@@ -35,6 +35,12 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         help="Base URL of the LLM router service (e.g., http://localhost:port)",
     )
     parser.add_argument(
+        "--llm-router-token",
+        required=False,
+        default=None,
+        help="Authentication token for the LLMRouter service.",
+    )
+    parser.add_argument(
         "--model",
         required=True,
         help="Model name to use for translation "

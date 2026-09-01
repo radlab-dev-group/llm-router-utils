@@ -66,6 +66,12 @@ def prepare_parser(description: str = "") -> argparse.ArgumentParser:
         help="Base URL of the LLMRouter service.",
     )
     parser.add_argument(
+        "--llm-router-token",
+        required=False,
+        default=None,
+        help="Authentication token for the LLMRouter service.",
+    )
+    parser.add_argument(
         "--model-name",
         default="gpt-oss:120b",
         help="Model identifier passed to the router.",
@@ -139,6 +145,7 @@ def main(argv: List[str] | None = None) -> None:
         prompt_path=args.prompt_file,
         labels=labels,
         llm_router_url=args.llm_router_url,
+        llm_router_token=args.llm_router_token,
         model_name=args.model_name,
         temperature=args.temperature,
         n_samples=args.n_samples,
